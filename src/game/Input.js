@@ -1,6 +1,7 @@
 const ACTION_KEYS = {
   fire: [' ', 'enter'],
   dodge: ['shift'],
+  jump: ['w', 'arrowup'],
   skill1: ['1'],
   skill2: ['2'],
   skill3: ['3'],
@@ -23,7 +24,7 @@ export class Input {
       Object.entries(ACTION_KEYS).forEach(([action, keys]) => {
         if (keys.includes(key)) this.pressAction(action);
       });
-      if (ACTION_KEYS.fire.includes(key)) event.preventDefault();
+      if (ACTION_KEYS.fire.includes(key) || ACTION_KEYS.jump.includes(key)) event.preventDefault();
     };
 
     this.onKeyUp = (event) => {
