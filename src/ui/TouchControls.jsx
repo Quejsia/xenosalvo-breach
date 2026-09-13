@@ -52,6 +52,9 @@ function Stick({ className, label, onChange, onEnd }) {
       onPointerCancel={(event) => {
         if (pointerId.current === event.pointerId) end();
       }}
+      onLostPointerCapture={(event) => {
+        if (pointerId.current === event.pointerId) end();
+      }}
     >
       <span className="stick-ring" />
       <span
@@ -64,6 +67,8 @@ function Stick({ className, label, onChange, onEnd }) {
 }
 
 function ActionButton({ className, label, symbol, onDown, onUp }) {
+  const activePointer = useRef(null);
+
   return (
     <button
       type="button"
@@ -71,16 +76,28 @@ function ActionButton({ className, label, symbol, onDown, onUp }) {
       aria-label={label}
       onPointerDown={(event) => {
         event.preventDefault();
+        activePointer.current = event.pointerId;
         event.currentTarget.setPointerCapture(event.pointerId);
-        onDown();
+        onDown(event.pointerId);
       }}
       onPointerUp={(event) => {
         event.preventDefault();
-        onUp();
+        if (activePointer.current === event.pointerId) {
+          activePointer.current = null;
+          onUp(event.pointerId);
+        }
       }}
-      onPointerCancel={onUp}
-      onPointerLeave={(event) => {
-        if (event.buttons === 0) onUp();
+      onPointerCancel={(event) => {
+        if (activePointer.current === event.pointerId) {
+          activePointer.current = null;
+          onUp(event.pointerId);
+        }
+      }}
+      onLostPointerCapture={(event) => {
+        if (activePointer.current === event.pointerId) {
+          activePointer.current = null;
+          onUp(event.pointerId);
+        }
       }}
     >
       <span>{symbol}</span>
@@ -111,8 +128,8 @@ export default function TouchControls({ input }) {
           className="fire-button"
           label="FIRE"
           symbol="●"
-          onDown={() => input.setActionDown('fire', true)}
-          onUp={() => input.setActionDown('fire', false)}
+          onDown={(pointerId) => input.beginFire(pointerId)}
+          onUp={(pointerId) => input.endFire(pointerId)}
         />
         <ActionButton
           className="dodge-button"
