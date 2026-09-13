@@ -22,7 +22,6 @@ export class TileMap {
       tiles[groundRow + 3][x] = 3;
     }
 
-    // Hand-authored cover/platform sections for the first test route.
     const platforms = [
       { x: 9, y: 6, w: 5 },
       { x: 18, y: 5, w: 4 },
@@ -32,9 +31,7 @@ export class TileMap {
     ];
 
     platforms.forEach(({ x, y, w }) => {
-      for (let tileX = x; tileX < x + w; tileX += 1) {
-        tiles[y][tileX] = 1;
-      }
+      for (let tileX = x; tileX < x + w; tileX += 1) tiles[y][tileX] = 1;
     });
 
     return tiles;
@@ -55,5 +52,16 @@ export class TileMap {
 
   getWorldHeight() {
     return this.height * TILE_SIZE;
+  }
+
+  forEachVisibleTile(cameraX, callback) {
+    const startX = Math.max(0, Math.floor(cameraX / TILE_SIZE) - 1);
+    const endX = Math.min(this.width - 1, Math.ceil((cameraX + 320) / TILE_SIZE) + 1);
+    for (let y = 0; y < this.height; y += 1) {
+      for (let x = startX; x <= endX; x += 1) {
+        const tile = this.tiles[y][x];
+        if (tile) callback(tile, x, y);
+      }
+    }
   }
 }
