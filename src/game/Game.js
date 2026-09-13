@@ -24,7 +24,12 @@ export class Game {
     });
   }
 
+  getInput() {
+    return this.input;
+  }
+
   start() {
+    this.render();
     this.loop.start();
   }
 
