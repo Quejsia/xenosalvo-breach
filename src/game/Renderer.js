@@ -18,11 +18,9 @@ export class Renderer {
     ctx.save();
     ctx.translate(-Math.round(cameraX), 0);
 
-    // Simple parallax-free prototype background.
     ctx.fillStyle = '#0e141d';
     ctx.fillRect(cameraX, 24, WORLD_WIDTH, 104);
 
-    // Tilemap world.
     if (level?.tileMap) {
       level.tileMap.forEachVisibleTile(cameraX, (tile, x, y) => {
         ctx.fillStyle = tile === 1 ? '#273241' : tile === 2 ? '#151c27' : '#0f141d';
@@ -32,9 +30,6 @@ export class Renderer {
           ctx.fillRect(x * 16, y * 16, 16, 2);
         }
       });
-    } else {
-      ctx.fillStyle = '#151c27';
-      ctx.fillRect(cameraX, 128, WORLD_WIDTH, 52);
     }
 
     enemies.forEach((enemy) => {
@@ -52,6 +47,12 @@ export class Renderer {
 
     ctx.fillStyle = '#f8fafc';
     bullets.forEach((bullet) => ctx.fillRect(Math.round(bullet.x), Math.round(bullet.y), bullet.width, bullet.height));
+
+    // A small ground shadow makes the grounded/airborne state visible during testing.
+    if (player.grounded) {
+      ctx.fillStyle = '#05070a';
+      ctx.fillRect(Math.round(player.x - 1), Math.round(player.y + player.height), player.width + 2, 2);
+    }
 
     ctx.fillStyle = '#e6edf3';
     ctx.fillRect(Math.round(player.x), Math.round(player.y), player.width, player.height);
@@ -91,11 +92,11 @@ export class Renderer {
 
     ctx.restore();
 
-    // Screen-space HUD.
     ctx.fillStyle = '#e6edf3';
     ctx.font = '6px monospace';
     ctx.fillText('XENOSALVO // FIELD TEST', 8, 12);
     ctx.fillStyle = '#64748b';
-    ctx.fillText(`X:${Math.round(player.x)}  CAM:${Math.round(cameraX)}  SCORE:${score}`, 8, 20);
+    const state = player.grounded ? 'GROUND' : 'AIR';
+    ctx.fillText(`X:${Math.round(player.x)}  CAM:${Math.round(cameraX)}  ${state}  VY:${Math.round(player.velocityY)}  SCORE:${score}`, 8, 20);
   }
 }
