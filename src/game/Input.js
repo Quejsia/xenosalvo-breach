@@ -17,6 +17,7 @@ export class Input {
     this.moveY = 0;
     this.aimX = 1;
     this.aimY = 0;
+    this.firePointerId = null;
 
     this.onKeyDown = (event) => {
       const key = event.key.toLowerCase();
@@ -33,8 +34,24 @@ export class Input {
       if (ACTION_KEYS.fire.includes(key)) this.setActionDown('fire', false);
     };
 
+    this.onWindowPointerUp = (event) => {
+      if (this.firePointerId === event.pointerId) {
+        this.firePointerId = null;
+        this.setActionDown('fire', false);
+      }
+    };
+
+    this.onWindowPointerCancel = (event) => {
+      if (this.firePointerId === event.pointerId) {
+        this.firePointerId = null;
+        this.setActionDown('fire', false);
+      }
+    };
+
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
+    window.addEventListener('pointerup', this.onWindowPointerUp);
+    window.addEventListener('pointercancel', this.onWindowPointerCancel);
   }
 
   isDown(...keys) {
@@ -62,6 +79,17 @@ export class Input {
     return { x: this.aimX, y: this.aimY };
   }
 
+  beginFire(pointerId) {
+    this.firePointerId = pointerId;
+    this.setActionDown('fire', true);
+  }
+
+  endFire(pointerId = null) {
+    if (pointerId !== null && this.firePointerId !== pointerId) return;
+    this.firePointerId = null;
+    this.setActionDown('fire', false);
+  }
+
   setActionDown(action, down) {
     if (down) this.actions.add(action);
     else this.actions.delete(action);
@@ -86,8 +114,11 @@ export class Input {
   destroy() {
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
+    window.removeEventListener('pointerup', this.onWindowPointerUp);
+    window.removeEventListener('pointercancel', this.onWindowPointerCancel);
     this.keys.clear();
     this.actions.clear();
     this.pressedActions.clear();
+    this.firePointerId = null;
   }
 }
