@@ -23,35 +23,39 @@ function intersectsSolid(body, tileMap) {
   return false;
 }
 
+function resolveAxis(body, amount, tileMap, axis) {
+  if (amount === 0) return false;
+
+  const step = Math.sign(amount);
+  body[axis] += amount;
+
+  if (!intersectsSolid(body, tileMap)) return false;
+
+  // Resolve one pixel at a time so the player cannot tunnel through a wall,
+  // platform edge, or the ground even when frame time briefly spikes.
+  let safety = 0;
+  while (intersectsSolid(body, tileMap) && safety < TILE_SIZE * 2) {
+    body[axis] -= step;
+    safety += 1;
+  }
+
+  return true;
+}
+
 export function moveAndCollide(body, dx, dy, tileMap) {
-  let grounded = false;
-  let hitX = false;
-  let hitY = false;
-
-  if (dx !== 0) {
-    body.x += dx;
-    if (intersectsSolid(body, tileMap)) {
-      const step = Math.sign(dx);
-      while (intersectsSolid(body, tileMap)) body.x -= step;
-      hitX = true;
-    }
-  }
-
-  if (dy !== 0) {
-    body.y += dy;
-    if (intersectsSolid(body, tileMap)) {
-      const step = Math.sign(dy);
-      while (intersectsSolid(body, tileMap)) body.y -= step;
-      hitY = true;
-      grounded = dy > 0;
-    }
-  }
-
+  const hitX = resolveAxis(body, dx, tileMap, 'x');
+  const hitY = resolveAxis(body, dy, tileMap, 'y');
+  const grounded = hitY && dy > 0;
   return { grounded, hitX, hitY };
 }
 
 export function isGrounded(body, tileMap) {
-  const probe = { x: body.x, y: body.y + 1, width: body.width, height: body.height };
+  const probe = {
+    x: body.x + 0.5,
+    y: body.y + 1,
+    width: Math.max(1, body.width - 1),
+    height: body.height,
+  };
   return intersectsSolid(probe, tileMap);
 }
 
