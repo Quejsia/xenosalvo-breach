@@ -1,17 +1,26 @@
 import { GameLoop } from './GameLoop.js';
 import { Input } from './Input.js';
 import { Renderer } from './Renderer.js';
+import { Camera } from './Camera.js';
 import { overlaps } from './Collision.js';
 import { Player } from './entities/Player.js';
 import { Enemy } from './entities/Enemy.js';
+import { Level } from './world/Level.js';
 
 export class Game {
   constructor(canvas) {
     this.canvas = canvas;
+    this.level = new Level();
+    this.camera = new Camera();
     this.renderer = new Renderer(canvas);
     this.input = new Input();
-    this.player = new Player(48, 124);
-    this.enemies = [new Enemy(230, 124, 1), new Enemy(285, 124, 2)];
+    this.player = new Player(this.level.spawn.x, this.level.spawn.y, this.level.width);
+    this.enemies = [
+      new Enemy(230, 116, 1),
+      new Enemy(420, 116, 2),
+      new Enemy(650, 116, 3),
+      new Enemy(820, 116, 4),
+    ];
     this.bullets = [];
     this.effects = [];
     this.paused = false;
@@ -46,20 +55,17 @@ export class Game {
     this.time += delta;
 
     this.player.update(delta, this.input);
+    this.camera.update(this.player, delta);
 
-    if (this.input.consumeAction('dodge')) {
-      if (this.player.dodge(this.input)) {
-        this.effects.push({ type: 'dodge', x: this.player.x, y: this.player.y, life: 0.2, maxLife: 0.2 });
-      }
+    if (this.input.consumeAction('dodge') && this.player.dodge(this.input)) {
+      this.effects.push({ type: 'dodge', x: this.player.x, y: this.player.y, life: 0.2, maxLife: 0.2 });
     }
 
     ['skill1', 'skill2', 'skill3', 'skill4'].forEach((skill, index) => {
       if (this.input.consumeAction(skill)) this.useSkill(index + 1);
     });
 
-    if (this.input.isActionDown('fire') && this.player.canFire()) {
-      this.fire();
-    }
+    if (this.input.isActionDown('fire') && this.player.canFire()) this.fire();
 
     this.enemies.forEach((enemy) => enemy.update(delta, this.player));
 
@@ -78,7 +84,7 @@ export class Game {
         }
       }
 
-      return bullet.life > 0 && bullet.x > -10 && bullet.x < 330 && bullet.y > 20 && bullet.y < 180;
+      return bullet.life > 0 && bullet.x > -10 && bullet.x < this.level.width + 10 && bullet.y > 20 && bullet.y < 180;
     });
 
     this.effects = this.effects.filter((effect) => {
@@ -125,7 +131,7 @@ export class Game {
   }
 
   render() {
-    this.renderer.render(this.player, this.bullets, this.enemies, this.effects, this.score);
+    this.renderer.render(this.player, this.bullets, this.enemies, this.effects, this.score, this.camera, this.level);
   }
 
   destroy() {
