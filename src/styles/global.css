@@ -7,18 +7,13 @@
 }
 
 * { box-sizing: border-box; }
-
 html, body, #root { width: 100%; min-height: 100%; margin: 0; }
-
 html { background: #05070a; }
-
 body {
   min-width: 320px;
   min-height: 100vh;
   overflow-x: hidden;
-  background:
-    radial-gradient(circle at 50% 15%, rgba(52, 65, 85, 0.16), transparent 42%),
-    #05070a;
+  background: radial-gradient(circle at 50% 15%, rgba(52, 65, 85, 0.16), transparent 42%), #05070a;
 }
 
 button {
@@ -32,7 +27,6 @@ button {
   cursor: pointer;
   touch-action: manipulation;
 }
-
 button:hover { background: #1e293b; }
 button:focus-visible { outline: 2px solid #cbd5e1; outline-offset: 3px; }
 
@@ -44,14 +38,12 @@ button:focus-visible { outline: 2px solid #cbd5e1; outline-offset: 3px; }
   place-items: center;
   padding: 24px;
 }
-
 .game-frame {
   width: min(1100px, 100%);
   border: 1px solid #1f2937;
   background: #080a0f;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
 }
-
 .game-header, .game-footer {
   min-height: 64px;
   display: flex;
@@ -61,24 +53,20 @@ button:focus-visible { outline: 2px solid #cbd5e1; outline-offset: 3px; }
   padding: 14px 18px;
   border-bottom: 1px solid #1f2937;
 }
-
 .game-footer {
   border-top: 1px solid #1f2937;
   border-bottom: 0;
   color: #64748b;
   font: 0.72rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
 }
-
 .eyebrow, .start-kicker {
   margin: 0 0 4px;
   color: #64748b;
   font: 0.65rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.16em;
 }
-
 h1, h2, p { margin-top: 0; }
 h1 { margin-bottom: 0; font-size: clamp(1rem, 2vw, 1.4rem); letter-spacing: 0.05em; }
-
 .status-light {
   width: 9px;
   height: 9px;
@@ -87,7 +75,6 @@ h1 { margin-bottom: 0; font-size: clamp(1rem, 2vw, 1.4rem); letter-spacing: 0.05
   background: #94a3b8;
   box-shadow: 0 0 14px rgba(148, 163, 184, 0.75);
 }
-
 .canvas-wrap {
   position: relative;
   width: 100%;
@@ -95,7 +82,6 @@ h1 { margin-bottom: 0; font-size: clamp(1rem, 2vw, 1.4rem); letter-spacing: 0.05
   background: #05070a;
   overflow: hidden;
 }
-
 canvas {
   display: block;
   width: 100%;
@@ -104,7 +90,6 @@ canvas {
   image-rendering: crisp-edges;
   touch-action: none;
 }
-
 .start-screen, .pause-screen {
   position: absolute;
   inset: 0;
@@ -116,43 +101,104 @@ canvas {
   text-align: center;
   background: rgba(5, 7, 10, 0.82);
   backdrop-filter: blur(2px);
+  z-index: 20;
 }
-
 .start-screen h2, .pause-screen h2 {
   margin: 0;
   font-size: clamp(2rem, 7vw, 5rem);
   letter-spacing: 0.08em;
 }
-
 .start-screen p:not(.start-kicker) { color: #94a3b8; }
-
-.mobile-hint {
-  max-width: 360px;
-  margin: 2px 0 0;
-  color: #64748b !important;
-  font-size: 0.72rem;
-}
-
+.mobile-hint { max-width: 360px; margin: 2px 0 0; color: #64748b !important; font-size: 0.72rem; }
 .pause-button { padding: 0.35rem 0.6rem; font-size: 0.72rem; }
+
+/* Touch control layer */
+.touch-controls {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+.touch-stick {
+  position: absolute;
+  width: clamp(92px, 18vw, 142px);
+  height: clamp(92px, 18vw, 142px);
+  border: 2px solid rgba(148, 163, 184, 0.32);
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.35);
+  pointer-events: auto;
+  touch-action: none;
+  display: grid;
+  place-items: center;
+}
+.move-stick { left: clamp(14px, 4vw, 42px); bottom: clamp(12px, 4vw, 34px); }
+.aim-stick { right: clamp(14px, 4vw, 42px); bottom: clamp(12px, 4vw, 34px); }
+.stick-ring {
+  position: absolute;
+  width: 72%;
+  height: 72%;
+  border: 1px dashed rgba(148, 163, 184, 0.2);
+  border-radius: 50%;
+}
+.stick-knob {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border: 2px solid rgba(226, 232, 240, 0.72);
+  border-radius: 50%;
+  background: rgba(71, 85, 105, 0.72);
+  transition: transform 50ms linear;
+}
+.touch-stick strong {
+  position: absolute;
+  bottom: 13%;
+  font: 600 8px ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.12em;
+  color: rgba(203, 213, 225, 0.45);
+}
+.action-cluster {
+  position: absolute;
+  right: clamp(12px, 3vw, 36px);
+  bottom: clamp(12px, 3vw, 32px);
+  width: clamp(185px, 28vw, 270px);
+  height: clamp(175px, 28vw, 250px);
+  pointer-events: none;
+}
+.touch-action {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  gap: 1px;
+  min-width: 0;
+  padding: 0;
+  border: 2px solid rgba(226, 232, 240, 0.45);
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.62);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  pointer-events: auto;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.touch-action:active { transform: scale(0.94); background: rgba(51, 65, 85, 0.82); }
+.touch-action span { font-size: clamp(16px, 3vw, 24px); line-height: 1; }
+.touch-action small { font: 700 7px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.08em; color: #cbd5e1; }
+.fire-button { right: 4px; top: 0; width: clamp(62px, 11vw, 88px); height: clamp(62px, 11vw, 88px); }
+.dodge-button { right: 76px; top: 78px; width: 54px; height: 54px; }
+.skill-row { position: absolute; right: 0; bottom: 0; display: flex; gap: 6px; pointer-events: none; }
+.skill-button { position: relative; width: 40px; height: 40px; }
 
 @media (max-width: 600px) {
   .app-shell { padding: 10px; }
   .game-footer span:nth-child(2) { display: none; }
 }
 
-/* Mobile landscape: make the game use the entire available screen area. */
 @media (orientation: landscape) and (max-height: 600px) {
   html, body, #root { height: 100%; }
-
   body { overflow: hidden; }
-
-  .app-shell {
-    height: 100dvh;
-    min-height: 0;
-    padding: 0;
-    place-items: stretch;
-  }
-
+  .app-shell { height: 100dvh; min-height: 0; padding: 0; place-items: stretch; }
   .game-frame {
     width: 100vw;
     height: 100dvh;
@@ -162,41 +208,27 @@ canvas {
     display: grid;
     grid-template-rows: auto minmax(0, 1fr) auto;
   }
-
-  .game-header {
-    min-height: 44px;
-    padding: 7px 12px;
-  }
-
-  .game-footer {
-    min-height: 38px;
-    padding: 6px 12px;
-  }
-
-  .canvas-wrap {
-    min-height: 0;
-    height: 100%;
-    aspect-ratio: auto;
-  }
-
+  .game-header { min-height: 44px; padding: 7px 12px; }
+  .game-footer { min-height: 38px; padding: 6px 12px; }
+  .canvas-wrap { min-height: 0; height: 100%; aspect-ratio: auto; }
   .mobile-hint { display: none; }
 }
 
-/* Very short landscape phones: prioritize the game viewport over decoration. */
 @media (orientation: landscape) and (max-height: 430px) {
   .game-header { display: none; }
-
-  .game-frame {
-    grid-template-rows: minmax(0, 1fr) auto;
-  }
-
-  .game-footer {
-    min-height: 34px;
-    padding: 4px 10px;
-  }
+  .game-frame { grid-template-rows: minmax(0, 1fr) auto; }
+  .game-footer { min-height: 34px; padding: 4px 10px; }
+  .touch-stick { width: clamp(78px, 20vh, 112px); height: clamp(78px, 20vh, 112px); }
+  .action-cluster { width: 190px; height: 150px; }
+  .fire-button { width: 66px; height: 66px; }
+  .dodge-button { right: 70px; top: 62px; width: 48px; height: 48px; }
+  .skill-button { width: 34px; height: 34px; }
 }
 
-/* Portrait phones remain usable, but landscape is the intended gameplay layout. */
+@media (pointer: fine) and (min-width: 801px) {
+  .touch-controls { display: none; }
+}
+
 @media (orientation: portrait) and (max-width: 600px) {
   .game-frame { width: 100%; }
   .canvas-wrap { width: 100%; }
