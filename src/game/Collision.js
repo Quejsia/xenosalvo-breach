@@ -6,3 +6,8 @@ export function overlaps(a, b) {
     a.y + a.height > b.y
   );
 }
+
+export function moveHorizontal(entity, dx, worldWidth) {
+  entity.x += dx;
+  entity.x = Math.max(0, Math.min(worldWidth - entity.width, entity.x));
+}
