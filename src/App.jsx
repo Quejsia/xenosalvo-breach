@@ -48,6 +48,7 @@ export default function App() {
               <h2>XENOSALVO</h2>
               <p>Breach the unknown.</p>
               <button type="button" onClick={startGame}>Start Prototype</button>
+              <p className="mobile-hint">Rotate your phone to landscape for the best experience.</p>
             </div>
           )}
           {started && paused && (
