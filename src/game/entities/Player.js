@@ -1,14 +1,15 @@
-import { moveHorizontal } from '../Collision.js';
+import { isGrounded, moveAndCollide } from '../Collision.js';
 
 const SPEED = 90;
-const GROUND_Y = 128;
+const GRAVITY = 620;
+const JUMP_SPEED = 220;
 const DODGE_SPEED = 190;
 const DODGE_TIME = 0.18;
 
 export class Player {
   constructor(x, y, worldWidth = 960) {
     this.x = x;
-    this.y = GROUND_Y - 12;
+    this.y = y;
     this.width = 8;
     this.height = 12;
     this.worldWidth = worldWidth;
@@ -17,12 +18,13 @@ export class Player {
     this.dodgeTimer = 0;
     this.dodgeX = 1;
     this.fireCooldown = 0;
+    this.velocityY = 0;
+    this.grounded = false;
   }
 
-  update(delta, input) {
+  update(delta, input, tileMap) {
     const move = input.getMove();
     let moveX = move.x;
-
     if (Math.abs(moveX) < 0.05) {
       moveX = 0;
       if (input.isDown('a', 'arrowleft')) moveX -= 1;
@@ -33,15 +35,24 @@ export class Player {
     this.aimX = aim.x;
     this.aimY = aim.y;
     this.fireCooldown = Math.max(0, this.fireCooldown - delta);
+    this.grounded = isGrounded(this, tileMap);
 
-    if (this.dodgeTimer > 0) {
-      this.dodgeTimer = Math.max(0, this.dodgeTimer - delta);
-      moveHorizontal(this, this.dodgeX * DODGE_SPEED * delta, this.worldWidth);
-    } else {
-      moveHorizontal(this, moveX * SPEED * delta, this.worldWidth);
+    if (this.grounded && input.consumeAction('jump')) {
+      this.velocityY = -JUMP_SPEED;
+      this.grounded = false;
     }
 
-    this.y = GROUND_Y - this.height;
+    if (!this.grounded || this.velocityY < 0) this.velocityY += GRAVITY * delta;
+    else this.velocityY = 0;
+
+    const horizontal = this.dodgeTimer > 0 ? this.dodgeX * DODGE_SPEED : moveX * SPEED;
+    const result = moveAndCollide(this, horizontal * delta, this.velocityY * delta, tileMap);
+
+    if (result.grounded || (result.hitY && this.velocityY > 0)) this.velocityY = 0;
+    if (result.hitY && this.velocityY < 0) this.velocityY = 0;
+    this.grounded = result.grounded || isGrounded(this, tileMap);
+
+    if (this.dodgeTimer > 0) this.dodgeTimer = Math.max(0, this.dodgeTimer - delta);
   }
 
   dodge(input) {
