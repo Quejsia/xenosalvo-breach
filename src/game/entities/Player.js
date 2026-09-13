@@ -20,21 +20,13 @@ export class Player {
   update(delta, input) {
     const touchMove = input.getMove();
     let moveX = touchMove.x;
-    let moveY = touchMove.y;
 
-    if (Math.hypot(moveX, moveY) < 0.05) {
+    // XenoSalvo is a grounded side-scrolling shooter.
+    // The left stick's vertical axis must never move the player into the air.
+    if (Math.abs(moveX) < 0.05) {
       moveX = 0;
-      moveY = 0;
       if (input.isDown('a', 'arrowleft')) moveX -= 1;
       if (input.isDown('d', 'arrowright')) moveX += 1;
-      if (input.isDown('w', 'arrowup')) moveY -= 1;
-      if (input.isDown('s', 'arrowdown')) moveY += 1;
-    }
-
-    const moveLength = Math.hypot(moveX, moveY);
-    if (moveLength > 1) {
-      moveX /= moveLength;
-      moveY /= moveLength;
     }
 
     const aim = input.getAim();
@@ -45,32 +37,25 @@ export class Player {
     if (this.dodgeTimer > 0) {
       this.dodgeTimer = Math.max(0, this.dodgeTimer - delta);
       this.x += this.dodgeX * DODGE_SPEED * delta;
-      this.y += this.dodgeY * DODGE_SPEED * delta;
     } else {
       this.x += moveX * SPEED * delta;
-      this.y += moveY * SPEED * delta;
     }
 
     this.x = Math.max(8, Math.min(312 - this.width, this.x));
-    this.y = Math.max(28, Math.min(GROUND_Y - this.height, this.y));
 
-    if (this.dodgeTimer <= 0 && Math.abs(moveY) < 0.1) {
-      this.y += (GROUND_Y - this.height - this.y) * Math.min(delta * 12, 1);
-    }
+    // Keep the player firmly grounded. Aim direction is independent from movement.
+    this.y = GROUND_Y - this.height;
+    this.dodgeY = 0;
   }
 
   dodge(input) {
     if (this.dodgeTimer > 0) return false;
-    const move = input.getMove();
-    let dx = move.x;
-    let dy = move.y;
-    if (Math.hypot(dx, dy) < 0.2) {
-      dx = this.aimX;
-      dy = this.aimY;
-    }
-    const length = Math.hypot(dx, dy) || 1;
-    this.dodgeX = dx / length;
-    this.dodgeY = dy / length;
+
+    // Dodge follows horizontal movement only; aiming upward/downward must not make
+    // a grounded character fly or float.
+    const moveX = input.getMove().x;
+    this.dodgeX = Math.abs(moveX) >= 0.2 ? Math.sign(moveX) : Math.sign(this.aimX) || 1;
+    this.dodgeY = 0;
     this.dodgeTimer = DODGE_TIME;
     return true;
   }
