@@ -23,7 +23,9 @@ export class Input {
       const key = event.key.toLowerCase();
       this.keys.add(key);
       Object.entries(ACTION_KEYS).forEach(([action, keys]) => {
-        if (keys.includes(key)) this.pressAction(action);
+        if (!keys.includes(key)) return;
+        if (action === 'fire') this.setActionDown('fire', true);
+        else this.pressAction(action);
       });
       if (ACTION_KEYS.fire.includes(key) || ACTION_KEYS.jump.includes(key)) event.preventDefault();
     };
@@ -35,17 +37,11 @@ export class Input {
     };
 
     this.onWindowPointerUp = (event) => {
-      if (this.firePointerId === event.pointerId) {
-        this.firePointerId = null;
-        this.setActionDown('fire', false);
-      }
+      if (this.firePointerId === event.pointerId) this.endFire(event.pointerId);
     };
 
     this.onWindowPointerCancel = (event) => {
-      if (this.firePointerId === event.pointerId) {
-        this.firePointerId = null;
-        this.setActionDown('fire', false);
-      }
+      if (this.firePointerId === event.pointerId) this.endFire(event.pointerId);
     };
 
     window.addEventListener('keydown', this.onKeyDown);
