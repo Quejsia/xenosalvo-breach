@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Game } from './game/Game.js';
+import TouchControls from './ui/TouchControls.jsx';
 
 export default function App() {
   const canvasRef = useRef(null);
@@ -9,10 +10,8 @@ export default function App() {
 
   useEffect(() => {
     if (!canvasRef.current) return undefined;
-
     const game = new Game(canvasRef.current);
     gameRef.current = game;
-
     return () => {
       game.destroy();
       gameRef.current = null;
@@ -29,6 +28,8 @@ export default function App() {
     gameRef.current?.start();
   };
 
+  const input = gameRef.current?.getInput();
+
   return (
     <main className="app-shell">
       <section className="game-frame" aria-label="XenoSalvo: Breach game">
@@ -42,6 +43,7 @@ export default function App() {
 
         <div className="canvas-wrap">
           <canvas ref={canvasRef} width={320} height={180} />
+          {started && input && <TouchControls input={input} />}
           {!started && (
             <div className="start-screen">
               <p className="start-kicker">SYSTEM INITIALIZED</p>
@@ -60,8 +62,8 @@ export default function App() {
         </div>
 
         <footer className="game-footer">
-          <span>Canvas 320×180</span>
-          <span>WASD / Arrow Keys</span>
+          <span>320×180 • MOBILE</span>
+          <span>WASD / Touch</span>
           {started && (
             <button className="pause-button" type="button" onClick={() => setPaused((value) => !value)}>
               {paused ? 'Resume' : 'Pause'}
