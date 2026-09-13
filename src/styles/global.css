@@ -8,10 +8,14 @@
 
 * { box-sizing: border-box; }
 
-html, body, #root { min-height: 100%; margin: 0; }
+html, body, #root { width: 100%; min-height: 100%; margin: 0; }
+
+html { background: #05070a; }
 
 body {
   min-width: 320px;
+  min-height: 100vh;
+  overflow-x: hidden;
   background:
     radial-gradient(circle at 50% 15%, rgba(52, 65, 85, 0.16), transparent 42%),
     #05070a;
@@ -26,13 +30,16 @@ button {
   font: inherit;
   font-weight: 700;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 button:hover { background: #1e293b; }
 button:focus-visible { outline: 2px solid #cbd5e1; outline-offset: 3px; }
 
 .app-shell {
+  width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: 24px;
@@ -75,6 +82,7 @@ h1 { margin-bottom: 0; font-size: clamp(1rem, 2vw, 1.4rem); letter-spacing: 0.05
 .status-light {
   width: 9px;
   height: 9px;
+  flex: 0 0 auto;
   border-radius: 50%;
   background: #94a3b8;
   box-shadow: 0 0 14px rgba(148, 163, 184, 0.75);
@@ -94,6 +102,7 @@ canvas {
   height: 100%;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+  touch-action: none;
 }
 
 .start-screen, .pause-screen {
@@ -103,6 +112,7 @@ canvas {
   place-items: center;
   align-content: center;
   gap: 10px;
+  padding: 20px;
   text-align: center;
   background: rgba(5, 7, 10, 0.82);
   backdrop-filter: blur(2px);
@@ -116,9 +126,78 @@ canvas {
 
 .start-screen p:not(.start-kicker) { color: #94a3b8; }
 
+.mobile-hint {
+  max-width: 360px;
+  margin: 2px 0 0;
+  color: #64748b !important;
+  font-size: 0.72rem;
+}
+
 .pause-button { padding: 0.35rem 0.6rem; font-size: 0.72rem; }
 
 @media (max-width: 600px) {
   .app-shell { padding: 10px; }
   .game-footer span:nth-child(2) { display: none; }
+}
+
+/* Mobile landscape: make the game use the entire available screen area. */
+@media (orientation: landscape) and (max-height: 600px) {
+  html, body, #root { height: 100%; }
+
+  body { overflow: hidden; }
+
+  .app-shell {
+    height: 100dvh;
+    min-height: 0;
+    padding: 0;
+    place-items: stretch;
+  }
+
+  .game-frame {
+    width: 100vw;
+    height: 100dvh;
+    min-height: 0;
+    border: 0;
+    box-shadow: none;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  .game-header {
+    min-height: 44px;
+    padding: 7px 12px;
+  }
+
+  .game-footer {
+    min-height: 38px;
+    padding: 6px 12px;
+  }
+
+  .canvas-wrap {
+    min-height: 0;
+    height: 100%;
+    aspect-ratio: auto;
+  }
+
+  .mobile-hint { display: none; }
+}
+
+/* Very short landscape phones: prioritize the game viewport over decoration. */
+@media (orientation: landscape) and (max-height: 430px) {
+  .game-header { display: none; }
+
+  .game-frame {
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .game-footer {
+    min-height: 34px;
+    padding: 4px 10px;
+  }
+}
+
+/* Portrait phones remain usable, but landscape is the intended gameplay layout. */
+@media (orientation: portrait) and (max-width: 600px) {
+  .game-frame { width: 100%; }
+  .canvas-wrap { width: 100%; }
 }
