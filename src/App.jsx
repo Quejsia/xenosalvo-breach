@@ -12,6 +12,7 @@ export default function App() {
     if (!canvasRef.current) return undefined;
     const game = new Game(canvasRef.current);
     gameRef.current = game;
+    game.render();
     return () => {
       game.destroy();
       gameRef.current = null;
