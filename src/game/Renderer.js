@@ -1,5 +1,7 @@
-const WORLD_WIDTH = 320;
-const WORLD_HEIGHT = 180;
+import { TILE_SIZE } from './world/TileMap.js';
+
+const VIEW_WIDTH = 320;
+const VIEW_HEIGHT = 180;
 
 export class Renderer {
   constructor(canvas) {
@@ -8,23 +10,46 @@ export class Renderer {
     this.ctx.imageSmoothingEnabled = false;
   }
 
-  render(player, bullets = [], enemies = [], effects = [], score = 0) {
+  render(player, bullets = [], enemies = [], effects = [], score = 0, camera, level) {
     const { ctx } = this;
+    ctx.clearRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
 
-    ctx.clearRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
-
+    // Sky / background.
     ctx.fillStyle = '#0a0d13';
-    ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
 
-    ctx.fillStyle = '#151c27';
-    ctx.fillRect(0, 136, WORLD_WIDTH, 44);
-
-    ctx.fillStyle = '#273241';
-    for (let x = 0; x < WORLD_WIDTH; x += 16) {
-      ctx.fillRect(x, 136, 12, 2);
+    // Distant grid gives the scrolling world a sense of movement without assets.
+    ctx.strokeStyle = '#111925';
+    ctx.lineWidth = 1;
+    const offset = Math.floor((camera.x * 0.25) % 32);
+    for (let x = -32 + offset; x < VIEW_WIDTH + 32; x += 32) {
+      ctx.beginPath();
+      ctx.moveTo(x, 28);
+      ctx.lineTo(x, 128);
+      ctx.stroke();
     }
 
-    // Enemies.
+    // Tilemap ground and platforms.
+    for (let ty = 0; ty < level.tileMap.height; ty += 1) {
+      for (let tx = 0; tx < level.tileMap.width; tx += 1) {
+        const tile = level.tileMap.getTile(tx, ty);
+        if (!tile) continue;
+        const x = tx * TILE_SIZE - camera.x;
+        const y = ty * TILE_SIZE - camera.y;
+        if (x + TILE_SIZE < 0 || x > VIEW_WIDTH || y + TILE_SIZE < 0 || y > VIEW_HEIGHT) continue;
+
+        ctx.fillStyle = tile === 1 ? '#273241' : tile === 2 ? '#18212d' : '#101722';
+        ctx.fillRect(Math.round(x), Math.round(y), TILE_SIZE, TILE_SIZE);
+        if (tile === 1) {
+          ctx.fillStyle = '#3a4758';
+          ctx.fillRect(Math.round(x), Math.round(y), TILE_SIZE, 2);
+        }
+      }
+    }
+
+    ctx.save();
+    ctx.translate(-camera.x, -camera.y);
+
     enemies.forEach((enemy) => {
       if (!enemy.alive) return;
       ctx.fillStyle = enemy.hitTimer > 0 ? '#f8fafc' : '#d45b68';
@@ -39,13 +64,11 @@ export class Renderer {
       ctx.fillRect(Math.round(enemy.x), Math.round(enemy.y - 4), enemy.width * (enemy.health / enemy.maxHealth), 2);
     });
 
-    // Bullets.
     ctx.fillStyle = '#f8fafc';
     bullets.forEach((bullet) => {
       ctx.fillRect(Math.round(bullet.x), Math.round(bullet.y), bullet.width, bullet.height);
     });
 
-    // Player sprite and weapon direction.
     ctx.fillStyle = '#e6edf3';
     ctx.fillRect(Math.round(player.x), Math.round(player.y), player.width, player.height);
     ctx.fillStyle = '#8b98a8';
@@ -82,11 +105,14 @@ export class Renderer {
       }
     });
 
-    // Prototype HUD.
+    ctx.restore();
+
+    // HUD is camera-independent.
     ctx.fillStyle = '#e6edf3';
     ctx.font = '6px monospace';
-    ctx.fillText('XENOSALVO // COMBAT TEST', 8, 12);
+    ctx.fillText('XENOSALVO // BREACH ROUTE 01', 8, 12);
     ctx.fillStyle = '#64748b';
-    ctx.fillText(`X:${Math.round(player.x)} Y:${Math.round(player.y)}  SCORE:${score}`, 8, 20);
+    ctx.fillText(`X:${Math.round(player.x)}  SCORE:${score}`, 8, 20);
+    ctx.fillText(`CAM:${Math.round(camera.x)}/${level.width - VIEW_WIDTH}`, 8, 28);
   }
 }
