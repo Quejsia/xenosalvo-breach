@@ -1,9 +1,11 @@
 const SPEED = 24;
+const WORLD_WIDTH = 960;
+const GROUND_Y = 128;
 
 export class Enemy {
   constructor(x, y, id = 0) {
     this.x = x;
-    this.y = y;
+    this.y = GROUND_Y - 12;
     this.id = id;
     this.width = 10;
     this.height = 12;
@@ -25,7 +27,8 @@ export class Enemy {
       this.x += Math.sign(distance) * SPEED * delta;
     }
 
-    this.x = Math.max(10, Math.min(310 - this.width, this.x));
+    this.x = Math.max(10, Math.min(WORLD_WIDTH - this.width - 10, this.x));
+    this.y = GROUND_Y - this.height;
   }
 
   hit(damage = 1) {
