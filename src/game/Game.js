@@ -27,15 +27,10 @@ export class Game {
     this.time = 0;
     this.score = 0;
 
-    this.loop = new GameLoop({
-      update: (delta) => this.update(delta),
-      render: () => this.render(),
-    });
+    this.loop = new GameLoop({ update: (delta) => this.update(delta), render: () => this.render() });
   }
 
-  getInput() {
-    return this.input;
-  }
+  getInput() { return this.input; }
 
   start() {
     this.render();
@@ -54,7 +49,7 @@ export class Game {
     if (this.paused) return;
     this.time += delta;
 
-    this.player.update(delta, this.input);
+    this.player.update(delta, this.input, this.level.tileMap);
     this.camera.update(this.player, delta);
 
     if (this.input.consumeAction('dodge') && this.player.dodge(this.input)) {
@@ -66,14 +61,12 @@ export class Game {
     });
 
     if (this.input.isActionDown('fire') && this.player.canFire()) this.fire();
-
     this.enemies.forEach((enemy) => enemy.update(delta, this.player));
 
     this.bullets = this.bullets.filter((bullet) => {
       bullet.x += bullet.vx * delta;
       bullet.y += bullet.vy * delta;
       bullet.life -= delta;
-
       for (const enemy of this.enemies) {
         if (enemy.alive && overlaps(bullet, enemy)) {
           const defeated = enemy.hit(bullet.damage);
@@ -83,8 +76,7 @@ export class Game {
           break;
         }
       }
-
-      return bullet.life > 0 && bullet.x > -10 && bullet.x < this.level.width + 10 && bullet.y > 20 && bullet.y < 180;
+      return bullet.life > 0 && bullet.x > -20 && bullet.x < this.level.width + 20 && bullet.y > -10 && bullet.y < this.level.height + 20;
     });
 
     this.effects = this.effects.filter((effect) => {
@@ -98,17 +90,7 @@ export class Game {
     const originX = this.player.x + this.player.width / 2 + aim.x * 5;
     const originY = this.player.y + this.player.height / 2 + aim.y * 5;
     const speed = 240;
-
-    this.bullets.push({
-      x: originX,
-      y: originY,
-      width: 3,
-      height: 2,
-      vx: aim.x * speed,
-      vy: aim.y * speed,
-      life: 0.75,
-      damage: 1,
-    });
+    this.bullets.push({ x: originX, y: originY, width: 3, height: 2, vx: aim.x * speed, vy: aim.y * speed, life: 0.9, damage: 1 });
     this.player.fired();
     this.effects.push({ type: 'muzzle', x: originX, y: originY, life: 0.06, maxLife: 0.06 });
   }
@@ -117,17 +99,7 @@ export class Game {
     const aim = this.input.getAim();
     const baseX = this.player.x + this.player.width / 2;
     const baseY = this.player.y + this.player.height / 2;
-    const radius = 14 + number * 3;
-
-    this.effects.push({
-      type: 'skill',
-      number,
-      x: baseX + aim.x * 18,
-      y: baseY + aim.y * 18,
-      radius,
-      life: 0.35,
-      maxLife: 0.35,
-    });
+    this.effects.push({ type: 'skill', number, x: baseX + aim.x * 18, y: baseY + aim.y * 18, radius: 14 + number * 3, life: 0.35, maxLife: 0.35 });
   }
 
   render() {
