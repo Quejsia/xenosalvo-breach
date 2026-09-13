@@ -25,6 +25,7 @@ export class Player {
   update(delta, input, tileMap) {
     const move = input.getMove();
     let moveX = move.x;
+
     if (Math.abs(moveX) < 0.05) {
       moveX = 0;
       if (input.isDown('a', 'arrowleft')) moveX -= 1;
@@ -35,23 +36,37 @@ export class Player {
     this.aimX = aim.x;
     this.aimY = aim.y;
     this.fireCooldown = Math.max(0, this.fireCooldown - delta);
-    this.grounded = isGrounded(this, tileMap);
 
-    if (this.grounded && input.consumeAction('jump')) {
+    const wasGrounded = isGrounded(this, tileMap);
+    const jumpPressed = input.consumeAction('jump');
+
+    if (wasGrounded && jumpPressed) {
       this.velocityY = -JUMP_SPEED;
+      this.grounded = false;
+    } else if (this.grounded && !wasGrounded) {
       this.grounded = false;
     }
 
-    if (!this.grounded || this.velocityY < 0) this.velocityY += GRAVITY * delta;
-    else this.velocityY = 0;
+    // Gravity is always applied while airborne. A falling player stops exactly
+    // on the first solid tile below them instead of sinking into the floor.
+    if (!wasGrounded || this.velocityY < 0) {
+      this.velocityY += GRAVITY * delta;
+    } else {
+      this.velocityY = 0;
+    }
 
-    const horizontal = this.dodgeTimer > 0 ? this.dodgeX * DODGE_SPEED : moveX * SPEED;
-    const result = moveAndCollide(this, horizontal * delta, this.velocityY * delta, tileMap);
+    const horizontalSpeed = this.dodgeTimer > 0 ? this.dodgeX * DODGE_SPEED : moveX * SPEED;
+    const result = moveAndCollide(
+      this,
+      horizontalSpeed * delta,
+      this.velocityY * delta,
+      tileMap,
+    );
 
-    if (result.grounded || (result.hitY && this.velocityY > 0)) this.velocityY = 0;
-    if (result.hitY && this.velocityY < 0) this.velocityY = 0;
+    if (result.hitY) this.velocityY = 0;
     this.grounded = result.grounded || isGrounded(this, tileMap);
 
+    if (this.grounded && this.velocityY > 0) this.velocityY = 0;
     if (this.dodgeTimer > 0) this.dodgeTimer = Math.max(0, this.dodgeTimer - delta);
   }
 
