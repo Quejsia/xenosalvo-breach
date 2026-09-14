@@ -11,12 +11,14 @@ export class CombatSystem {
   }
 
   applyPlayerProjectile(projectile, enemies) {
+    if (!projectile.alive || projectile.hitApplied) return null;
+
     for (const enemy of enemies) {
       if (!enemy.alive) continue;
       if (!overlapsEntityHurtbox(projectile, enemy)) continue;
 
       const defeated = enemy.hit(projectile.damage, projectile.directionX * 34, projectile.directionY * 16);
-      if (projectile.hitApplied) return null;
+      if (!defeated) enemy.stun(0.12);
       projectile.hitApplied = true;
       projectile.alive = false;
       this.onEnemyHit(enemy, defeated);
@@ -26,9 +28,9 @@ export class CombatSystem {
   }
 
   applyEnemyProjectile(projectile) {
-    if (!this.player.alive || !overlapsEntityHurtbox(projectile, this.player)) return false;
-    projectile.hitApplied = true;
-    projectile.alive = false;
+    if (!projectile.alive || projectile.hitApplied || !this.player.alive) return false;
+    if (!overlapsEntityHurtbox(projectile, this.player)) return false;
+
     const accepted = this.player.damage(
       projectile.damage,
       projectile.directionX * 42,
@@ -36,6 +38,8 @@ export class CombatSystem {
     );
     if (!accepted) return false;
 
+    projectile.hitApplied = true;
+    projectile.alive = false;
     this.onPlayerHit();
     return true;
   }
