@@ -2,6 +2,7 @@ const ACTION_KEYS = {
   fire: [' ', 'enter'],
   dodge: ['shift'],
   jump: ['w', 'arrowup'],
+  restart: ['r'],
   skill1: ['1'],
   skill2: ['2'],
   skill3: ['3'],
@@ -36,19 +37,10 @@ export class Input {
       if (ACTION_KEYS.fire.includes(key)) this.setActionDown('fire', false);
     };
 
-    this.onWindowPointerUp = (event) => {
-      this.endFire(event.pointerId);
-    };
-
-    this.onWindowPointerCancel = (event) => {
-      this.endFire(event.pointerId);
-    };
-
+    this.onWindowPointerUp = (event) => this.endFire(event.pointerId);
+    this.onWindowPointerCancel = (event) => this.endFire(event.pointerId);
     this.onWindowBlur = () => this.releaseAllInputs();
-
-    this.onVisibilityChange = () => {
-      if (document.hidden) this.releaseAllInputs();
-    };
+    this.onVisibilityChange = () => { if (document.hidden) this.releaseAllInputs(); };
 
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
@@ -58,30 +50,16 @@ export class Input {
     document.addEventListener('visibilitychange', this.onVisibilityChange);
   }
 
-  isDown(...keys) {
-    return keys.some((key) => this.keys.has(key.toLowerCase()));
-  }
-
-  setMove(x, y) {
-    this.moveX = x;
-    this.moveY = y;
-  }
-
-  getMove() {
-    return { x: this.moveX, y: this.moveY };
-  }
+  isDown(...keys) { return keys.some((key) => this.keys.has(key.toLowerCase())); }
+  setMove(x, y) { this.moveX = x; this.moveY = y; }
+  getMove() { return { x: this.moveX, y: this.moveY }; }
 
   setAim(x, y) {
     const length = Math.hypot(x, y);
-    if (length > 0.05) {
-      this.aimX = x / length;
-      this.aimY = y / length;
-    }
+    if (length > 0.05) { this.aimX = x / length; this.aimY = y / length; }
   }
 
-  getAim() {
-    return { x: this.aimX, y: this.aimY };
-  }
+  getAim() { return { x: this.aimX, y: this.aimY }; }
 
   beginFire(pointerId) {
     this.firePointerIds.add(pointerId);
@@ -91,10 +69,7 @@ export class Input {
   endFire(pointerId = null) {
     if (pointerId !== null) this.firePointerIds.delete(pointerId);
     else this.firePointerIds.clear();
-
-    if (this.firePointerIds.size === 0) {
-      this.setActionDown('fire', false);
-    }
+    if (this.firePointerIds.size === 0) this.setActionDown('fire', false);
   }
 
   setActionDown(action, down) {
@@ -107,9 +82,7 @@ export class Input {
     if (action !== 'fire') this.actions.add(action);
   }
 
-  isActionDown(action) {
-    return this.actions.has(action);
-  }
+  isActionDown(action) { return this.actions.has(action); }
 
   consumeAction(action) {
     if (!this.pressedActions.has(action)) return false;
@@ -123,12 +96,7 @@ export class Input {
     this.setActionDown('fire', false);
     this.setMove(0, 0);
     this.pressedActions.clear();
-    this.actions.delete('dodge');
-    this.actions.delete('jump');
-    this.actions.delete('skill1');
-    this.actions.delete('skill2');
-    this.actions.delete('skill3');
-    this.actions.delete('skill4');
+    ['dodge', 'jump', 'restart', 'skill1', 'skill2', 'skill3', 'skill4'].forEach((action) => this.actions.delete(action));
   }
 
   destroy() {
@@ -138,9 +106,6 @@ export class Input {
     window.removeEventListener('pointercancel', this.onWindowPointerCancel);
     window.removeEventListener('blur', this.onWindowBlur);
     document.removeEventListener('visibilitychange', this.onVisibilityChange);
-    this.keys.clear();
-    this.actions.clear();
-    this.pressedActions.clear();
-    this.firePointerIds.clear();
+    this.keys.clear(); this.actions.clear(); this.pressedActions.clear(); this.firePointerIds.clear();
   }
 }
