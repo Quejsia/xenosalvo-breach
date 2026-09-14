@@ -20,6 +20,7 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rend
 .start-screen p:not(.start-kicker),.game-over-screen p{color:#94a3b8}.mobile-hint{max-width:360px;margin:2px 0 0;color:#64748b!important;font-size:.72rem}
 .game-over-screen button{min-width:150px;min-height:48px;font-size:.95rem;letter-spacing:.08em}.game-over-screen small{color:#64748b;font:.68rem ui-monospace,SFMono-Regular,Menlo,monospace}
 .pause-button{padding:.35rem .6rem;font-size:.72rem}
+.retry-key-hint{display:block}
 .touch-controls{position:absolute;inset:0;z-index:10;pointer-events:none;user-select:none;-webkit-user-select:none;touch-action:none}
 .touch-stick{position:absolute;width:clamp(92px,18vw,142px);height:clamp(92px,18vw,142px);border:2px solid rgba(148,163,184,.32);border-radius:50%;background:rgba(15,23,42,.35);pointer-events:auto;touch-action:none;display:grid;place-items:center}
 .move-stick{left:clamp(14px,4vw,42px);bottom:clamp(12px,4vw,34px)} .aim-stick{right:clamp(175px,23vw,285px);bottom:clamp(12px,4vw,34px)}
@@ -33,5 +34,6 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rend
 @media(max-width:600px){.app-shell{padding:10px}.game-footer span:nth-child(2){display:none}}
 @media(orientation:landscape) and (max-height:600px){html,body,#root{height:100%}body{overflow:hidden}.app-shell{height:100dvh;min-height:0;padding:0;place-items:stretch}.game-frame{width:100vw;height:100dvh;min-height:0;border:0;box-shadow:none;display:grid;grid-template-rows:auto minmax(0,1fr) auto}.game-header{min-height:44px;padding:7px 12px}.game-footer{min-height:38px;padding:6px 12px}.canvas-wrap{min-height:0;height:100%;aspect-ratio:auto}.mobile-hint{display:none}}
 @media(orientation:landscape) and (max-height:430px){.game-header{display:none}.game-frame{grid-template-rows:minmax(0,1fr) auto}.game-footer{min-height:34px;padding:4px 10px}.touch-stick{width:clamp(78px,20vh,112px);height:clamp(78px,20vh,112px)}.aim-stick{right:165px}.action-cluster{width:190px;height:150px}.fire-button{width:66px;height:66px}.jump-button{right:72px;top:4px;width:48px;height:48px}.dodge-button{right:68px;top:58px;width:48px;height:48px}.skill-button{width:34px;height:34px}.game-over-screen h2{font-size:2.2rem}.game-over-screen button{min-height:42px}}
-@media(pointer:fine) and (min-width:801px){.touch-controls{display:none}}
+@media(pointer:fine) and (min-width:801px){.touch-controls{display:none}.retry-button{display:inline-flex}.retry-key-hint{display:block}}
+@media(pointer:coarse){.retry-key-hint{display:none}.game-over-screen button{min-width:170px;min-height:52px;font-size:1rem}}
 @media(orientation:portrait) and (max-width:600px){.game-frame{width:100%}.canvas-wrap{width:100%}}
