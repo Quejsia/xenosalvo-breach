@@ -2,7 +2,6 @@ import { GameLoop } from './GameLoop.js';
 import { Input } from './Input.js';
 import { Renderer } from './Renderer.js';
 import { Camera } from './Camera.js';
-import { overlaps } from './Collision.js';
 import { Player } from './entities/Player.js';
 import { Enemy } from './entities/Enemy.js';
 import { Projectile } from './entities/Projectile.js';
@@ -10,6 +9,7 @@ import { Weapon } from './entities/Weapon.js';
 import { Level } from './world/Level.js';
 import { ParticleSystem } from './systems/ParticleSystem.js';
 import { AnimationSystem } from './systems/AnimationSystem.js';
+import { CombatSystem } from './systems/CombatSystem.js';
 
 export class Game {
   constructor(canvas) {
@@ -30,6 +30,14 @@ export class Game {
     this.time = 0;
     this.score = 0;
     this.createActors();
+    this.combat = new CombatSystem({
+      player: this.player,
+      enemies: this.enemies,
+      camera: this.camera,
+      effects: this.effects,
+      particles: this.particles,
+      onScore: (points) => { this.score += points; },
+    });
     this.loop = new GameLoop({ update: (delta) => this.update(delta), render: () => this.render() });
   }
 
@@ -47,6 +55,12 @@ export class Game {
     this.particles.clear();
     this.animations.time = 0;
     this.gameOver = false;
+  }
+
+  syncCombatActors() {
+    this.combat.player = this.player;
+    this.combat.enemies = this.enemies;
+    this.combat.effects = this.effects;
   }
 
   getInput() { return this.input; }
@@ -67,6 +81,7 @@ export class Game {
 
   restart() {
     this.createActors();
+    this.syncCombatActors();
     this.camera.reset();
     this.weapon.reset?.();
     this.time = 0;
@@ -103,7 +118,7 @@ export class Game {
       if (this.input.consumeAction(skill)) this.useSkill(index + 1);
     });
 
-    if (this.input.isActionDown('fire') && this.weapon.canFire()) {
+    if (this.input.isActionDown('fire') && this.weapon.canFire() && this.player.canFire()) {
       const projectile = this.weapon.fire(this.player, this.input, Projectile);
       if (projectile) {
         this.bullets.push(projectile);
@@ -124,37 +139,31 @@ export class Game {
     });
 
     this.bullets = this.bullets.filter((bullet) => {
-      const result = bullet.update(delta, this.level, this.enemies);
+      const result = bullet.update(delta, this.level, (currentBullet) => {
+        const hit = this.combat.applyPlayerProjectile(currentBullet, this.enemies);
+        return hit || null;
+      });
+
       if (result.terrain) {
         this.effects.push({ type: 'impact', x: bullet.x, y: bullet.y, life: 0.08, maxLife: 0.08 });
         this.particles.burst(bullet.x, bullet.y, { count: 4, speed: 28, life: 0.16, spread: Math.PI * 2 });
       }
       if (result.hit) {
-        this.effects.push({ type: result.defeated ? 'defeat' : 'hit', x: result.hit.x, y: result.hit.y, life: 0.16, maxLife: 0.16 });
-        this.particles.burst(result.hit.x + result.hit.width / 2, result.hit.y + result.hit.height / 2, { count: result.defeated ? 12 : 5, speed: result.defeated ? 55 : 32, life: result.defeated ? 0.38 : 0.2, gravity: 70, spread: Math.PI * 2 });
-        this.camera.shake(result.defeated ? 2 : 0.9, result.defeated ? 0.16 : 0.08);
-        if (result.defeated) this.score += 100;
+        // Hit/defeat feedback is emitted by CombatSystem.
       }
       return bullet.alive;
     });
 
     this.enemyBullets = this.enemyBullets.filter((bullet) => {
-      const result = bullet.update(delta, this.level, [], this.player);
+      const result = bullet.update(delta, this.level, (currentBullet) => (
+        this.combat.applyEnemyProjectile(currentBullet) ? this.player : null
+      ));
+
       if (result.terrain) {
         this.effects.push({ type: 'impact', x: bullet.x, y: bullet.y, life: 0.08, maxLife: 0.08 });
         this.particles.burst(bullet.x, bullet.y, { count: 4, speed: 25, life: 0.15, spread: Math.PI * 2 });
       }
-      if (result.playerHit && this.player.damage(result.damage)) {
-        this.effects.push({ type: 'player-hit', x: this.player.x, y: this.player.y, life: 0.18, maxLife: 0.18 });
-        this.particles.burst(this.player.x + this.player.width / 2, this.player.y + this.player.height / 2, { count: 9, speed: 42, life: 0.28, gravity: 90, spread: Math.PI * 2 });
-        this.camera.shake(2.5, 0.2);
-        if (!this.player.alive) {
-          this.gameOver = true;
-          this.effects.push({ type: 'player-death', x: this.player.x, y: this.player.y, life: 0.7, maxLife: 0.7 });
-          this.particles.burst(this.player.x + this.player.width / 2, this.player.y + this.player.height / 2, { count: 18, speed: 65, life: 0.55, gravity: 120, spread: Math.PI * 2 });
-          this.camera.shake(4, 0.35);
-        }
-      }
+      if (!this.player.alive) this.gameOver = true;
       return bullet.alive;
     });
 
@@ -163,6 +172,7 @@ export class Game {
       effect.life -= delta;
       return effect.life > 0;
     });
+    this.combat.effects = this.effects;
   }
 
   useSkill(number) {
