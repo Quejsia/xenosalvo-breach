@@ -1,11 +1,11 @@
 import { overlaps } from '../Collision.js';
 
 export class Projectile {
-  constructor({ x, y, directionX, directionY, speed = 280, damage = 1, life = 1.2, enemyShot = false }) {
+  constructor({ x, y, directionX, directionY, speed = 240, damage = 1, life = 1.2, enemyShot = false }) {
     this.x = x;
     this.y = y;
-    this.width = enemyShot ? 3 : 3;
-    this.height = 2;
+    this.width = 4;
+    this.height = 3;
     this.directionX = directionX;
     this.directionY = directionY;
     this.speed = speed;
@@ -17,32 +17,39 @@ export class Projectile {
 
   update(delta, level, enemies = [], player = null) {
     if (!this.alive) return { hit: null };
-    const nextX = this.x + this.directionX * this.speed * delta;
-    const nextY = this.y + this.directionY * this.speed * delta;
 
-    if (level?.tileMap?.isSolidWorld(nextX, nextY, this.width, this.height)) {
-      this.alive = false;
-      return { hit: null, terrain: true };
-    }
+    // Use a swept movement in small steps so fast bullets cannot visually or
+    // physically skip through thin targets/terrain between frames.
+    const distance = this.speed * delta;
+    const steps = Math.max(1, Math.ceil(distance / 4));
+    const stepX = this.directionX * (distance / steps);
+    const stepY = this.directionY * (distance / steps);
 
-    this.x = nextX;
-    this.y = nextY;
-    this.life -= delta;
+    for (let step = 0; step < steps; step += 1) {
+      this.x += stepX;
+      this.y += stepY;
 
-    if (this.enemyShot) {
-      if (player?.alive && overlaps(this, player)) {
+      if (level?.tileMap?.isSolidWorld(this.x, this.y, this.width, this.height)) {
         this.alive = false;
-        return { playerHit: player, damage: this.damage };
+        return { hit: null, terrain: true };
       }
-    } else {
-      for (const enemy of enemies) {
-        if (enemy.alive && overlaps(this, enemy)) {
+
+      if (this.enemyShot) {
+        if (player?.alive && overlaps(this, player)) {
           this.alive = false;
-          return { hit: enemy, defeated: enemy.hit(this.damage) };
+          return { playerHit: player, damage: this.damage };
+        }
+      } else {
+        for (const enemy of enemies) {
+          if (enemy.alive && overlaps(this, enemy)) {
+            this.alive = false;
+            return { hit: enemy, defeated: enemy.hit(this.damage) };
+          }
         }
       }
     }
 
+    this.life -= delta;
     if (this.life <= 0) this.alive = false;
     return { hit: null };
   }
