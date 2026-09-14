@@ -17,7 +17,7 @@ export class Input {
     this.moveY = 0;
     this.aimX = 1;
     this.aimY = 0;
-    this.firePointerId = null;
+    this.firePointerIds = new Set();
 
     this.onKeyDown = (event) => {
       const key = event.key.toLowerCase();
@@ -37,17 +37,25 @@ export class Input {
     };
 
     this.onWindowPointerUp = (event) => {
-      if (this.firePointerId === event.pointerId) this.endFire(event.pointerId);
+      this.endFire(event.pointerId);
     };
 
     this.onWindowPointerCancel = (event) => {
-      if (this.firePointerId === event.pointerId) this.endFire(event.pointerId);
+      this.endFire(event.pointerId);
+    };
+
+    this.onWindowBlur = () => this.releaseAllInputs();
+
+    this.onVisibilityChange = () => {
+      if (document.hidden) this.releaseAllInputs();
     };
 
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
     window.addEventListener('pointerup', this.onWindowPointerUp);
     window.addEventListener('pointercancel', this.onWindowPointerCancel);
+    window.addEventListener('blur', this.onWindowBlur);
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
   }
 
   isDown(...keys) {
@@ -76,14 +84,17 @@ export class Input {
   }
 
   beginFire(pointerId) {
-    this.firePointerId = pointerId;
+    this.firePointerIds.add(pointerId);
     this.setActionDown('fire', true);
   }
 
   endFire(pointerId = null) {
-    if (pointerId !== null && this.firePointerId !== pointerId) return;
-    this.firePointerId = null;
-    this.setActionDown('fire', false);
+    if (pointerId !== null) this.firePointerIds.delete(pointerId);
+    else this.firePointerIds.clear();
+
+    if (this.firePointerIds.size === 0) {
+      this.setActionDown('fire', false);
+    }
   }
 
   setActionDown(action, down) {
@@ -107,14 +118,29 @@ export class Input {
     return true;
   }
 
+  releaseAllInputs() {
+    this.firePointerIds.clear();
+    this.setActionDown('fire', false);
+    this.setMove(0, 0);
+    this.pressedActions.clear();
+    this.actions.delete('dodge');
+    this.actions.delete('jump');
+    this.actions.delete('skill1');
+    this.actions.delete('skill2');
+    this.actions.delete('skill3');
+    this.actions.delete('skill4');
+  }
+
   destroy() {
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
     window.removeEventListener('pointerup', this.onWindowPointerUp);
     window.removeEventListener('pointercancel', this.onWindowPointerCancel);
+    window.removeEventListener('blur', this.onWindowBlur);
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
     this.keys.clear();
     this.actions.clear();
     this.pressedActions.clear();
-    this.firePointerId = null;
+    this.firePointerIds.clear();
   }
 }
