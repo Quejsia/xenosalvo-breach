@@ -16,7 +16,7 @@ export class Projectile {
     this.hitApplied = false;
   }
 
-  update(delta, level) {
+  update(delta, level, onStep = null) {
     if (!this.alive) return { hit: null };
 
     const distance = this.speed * delta;
@@ -31,6 +31,12 @@ export class Projectile {
       if (level?.tileMap?.isSolidWorld(this.x, this.y, this.width, this.height)) {
         this.alive = false;
         return { hit: null, terrain: true };
+      }
+
+      if (onStep) {
+        const hit = onStep(this);
+        if (hit) return { hit };
+        if (!this.alive) return { hit: null };
       }
     }
 
