@@ -3,8 +3,9 @@ const DETECT_RANGE = 170;
 const ATTACK_RANGE = 180;
 const RETREAT_RANGE = 28;
 const ATTACK_COOLDOWN = 1.35;
-const HURT_TIME = 0.08;
+const HURT_TIME = 0.12;
 const PATROL_DISTANCE = 52;
+const KNOCKBACK_DECAY = 300;
 
 export const EnemyState = Object.freeze({
   PATROL: 'patrol',
@@ -31,6 +32,8 @@ export class Enemy {
     this.hitTimer = 0;
     this.stunTimer = 0;
     this.attackTimer = 0.4 + (id % 3) * 0.25;
+    this.knockbackX = 0;
+    this.knockbackY = 0;
     this.state = EnemyState.PATROL;
     this.stateTimer = 0;
     this.patrolDirection = id % 2 === 0 ? 1 : -1;
@@ -47,6 +50,10 @@ export class Enemy {
     this.stunTimer = Math.max(0, this.stunTimer - delta);
     this.attackTimer = Math.max(0, this.attackTimer - delta);
     this.stateTimer += delta;
+
+    this.knockbackX = approachZero(this.knockbackX, KNOCKBACK_DECAY * delta);
+    this.knockbackY = approachZero(this.knockbackY, KNOCKBACK_DECAY * delta);
+    if (Math.abs(this.knockbackX) > 0.01) this.move(delta, Math.sign(this.knockbackX), tileMap, Math.abs(this.knockbackX), false);
 
     if (!this.alive) {
       this.setState(EnemyState.DEAD);
@@ -93,15 +100,16 @@ export class Enemy {
     this.move(delta, this.patrolDirection, tileMap);
   }
 
-  move(delta, direction, tileMap) {
+  move(delta, direction, tileMap, speed = SPEED, reverseOnBlock = true) {
     if (!direction) return;
     const previousX = this.x;
-    this.x += direction * SPEED * delta;
+    this.x += direction * speed * delta;
     this.x = Math.max(10, Math.min(this.worldWidth - this.width - 10, this.x));
 
     if (tileMap?.isSolidWorld(this.x, this.y, this.width, this.height)) {
       this.x = previousX;
-      this.patrolDirection *= -1;
+      if (reverseOnBlock) this.patrolDirection *= -1;
+      this.knockbackX = 0;
     }
   }
 
@@ -129,10 +137,12 @@ export class Enemy {
     };
   }
 
-  hit(damage = 1) {
+  hit(damage = 1, knockbackX = 0, knockbackY = 0) {
     if (!this.alive) return true;
     this.health = Math.max(0, this.health - damage);
     this.hitTimer = HURT_TIME;
+    this.knockbackX = knockbackX;
+    this.knockbackY = knockbackY;
     if (this.health <= 0) this.setState(EnemyState.DEAD);
     else this.setState(EnemyState.HURT);
     return this.health <= 0;
@@ -146,4 +156,10 @@ export class Enemy {
   }
 
   get alive() { return this.health > 0; }
+}
+
+function approachZero(value, amount) {
+  if (value > 0) return Math.max(0, value - amount);
+  if (value < 0) return Math.min(0, value + amount);
+  return 0;
 }
