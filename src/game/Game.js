@@ -110,7 +110,8 @@ export class Game {
         const aim = this.input.getAim();
         this.effects.push({ type: 'muzzle', x: projectile.x, y: projectile.y, dx: aim.x, dy: aim.y, life: 0.07, maxLife: 0.07 });
         this.particles.burst(projectile.x, projectile.y, { count: 3, speed: 22, life: 0.1, size: 1, spread: 0.7, angle: Math.atan2(-aim.y, -aim.x) });
-        this.camera.shake(0.45, 0.06);
+        // Do not shake the whole camera for every automatic-fire shot.
+        // Impacts, dodges and abilities provide the stronger screen feedback.
       }
     }
 
