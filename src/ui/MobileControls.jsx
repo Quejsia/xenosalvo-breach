@@ -31,7 +31,7 @@ function Stick({ className, label, onChange, onEnd }) {
 export default function MobileControls({ input }) {
   return <div className="touch-controls" aria-label="Mobile controls">
     <Stick className="move-stick" label="Move joystick" onChange={(v) => input.setMove(v.x, v.y)} onEnd={() => input.setMove(0, 0)} />
-    <Stick className="aim-stick" label="Aim joystick" onChange={(v) => input.setAim(v.x, v.y)} onEnd={() => input.setAim(1, 0)} />
+    <Stick className="aim-stick" label="Aim joystick" onChange={(v) => input.setAim(v.x, v.y)} onEnd={() => {}} />
     <div className="action-cluster">
       <Button className="fire-button" label="FIRE" symbol="●" onDown={() => input.setActionDown('fire', true)} />
       <Button className="jump-button" label="JUMP" symbol="↑" onDown={() => input.pressAction('jump')} />
