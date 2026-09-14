@@ -27,6 +27,14 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, [started]);
 
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key.toLowerCase() === 'r' && gameOver) retryGame();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [gameOver]);
+
   const startGame = () => {
     setStarted(true);
     setPaused(false);
@@ -56,8 +64,8 @@ export default function App() {
               <p className="game-over-kicker">XENOSALVO // FIELD TEST</p>
               <h2>MISSION FAILED</h2>
               <p>Score: {gameRef.current?.score ?? 0}</p>
-              <button type="button" onClick={retryGame}>RETRY</button>
-              <small>or press R on keyboard</small>
+              <button className="retry-button" type="button" onClick={retryGame}>RETRY</button>
+              <small className="retry-key-hint">Press R on PC</small>
             </div>
           )}
         </div>
