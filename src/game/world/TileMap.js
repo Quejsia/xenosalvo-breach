@@ -46,6 +46,20 @@ export class TileMap {
     return SOLID_TILES.has(this.getTile(tx, ty));
   }
 
+  isSolidWorld(x, y, width = 1, height = 1) {
+    const left = Math.floor(x / TILE_SIZE);
+    const right = Math.floor((x + width - 0.001) / TILE_SIZE);
+    const top = Math.floor(y / TILE_SIZE);
+    const bottom = Math.floor((y + height - 0.001) / TILE_SIZE);
+
+    for (let ty = top; ty <= bottom; ty += 1) {
+      for (let tx = left; tx <= right; tx += 1) {
+        if (this.isSolid(tx, ty)) return true;
+      }
+    }
+    return false;
+  }
+
   getWorldWidth() {
     return this.width * TILE_SIZE;
   }
