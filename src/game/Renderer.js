@@ -36,38 +36,20 @@ export class Renderer {
 
     enemies.forEach((enemy) => {
       if (!enemy.alive) return;
-      const bob = Math.sin((animations?.time ?? 0) * 5 + enemy.id) > 0 ? 0 : 1;
+      const y = Math.round(enemy.y);
       ctx.fillStyle = enemy.hitTimer > 0 ? '#f8fafc' : '#d45b68';
-      ctx.fillRect(Math.round(enemy.x), Math.round(enemy.y - bob), enemy.width, enemy.height);
+      ctx.fillRect(Math.round(enemy.x), y, enemy.width, enemy.height);
       ctx.fillStyle = '#24151a';
-      ctx.fillRect(Math.round(enemy.x + 2), Math.round(enemy.y + 4 - bob), 2, 2);
-      ctx.fillRect(Math.round(enemy.x + 6), Math.round(enemy.y + 4 - bob), 2, 2);
+      ctx.fillRect(Math.round(enemy.x + 2), y + 4, 2, 2);
+      ctx.fillRect(Math.round(enemy.x + 6), y + 4, 2, 2);
       ctx.fillStyle = '#05070a';
-      ctx.fillRect(Math.round(enemy.x), Math.round(enemy.y - 4 - bob), enemy.width, 2);
+      ctx.fillRect(Math.round(enemy.x), y - 4, enemy.width, 2);
       ctx.fillStyle = '#e6edf3';
-      ctx.fillRect(Math.round(enemy.x), Math.round(enemy.y - 4 - bob), enemy.width * Math.max(0, enemy.health / enemy.maxHealth), 2);
+      ctx.fillRect(Math.round(enemy.x), y - 4, enemy.width * Math.max(0, enemy.health / enemy.maxHealth), 2);
     });
 
-    bullets.forEach((bullet) => {
-      const direction = Math.atan2(bullet.vy, bullet.vx);
-      ctx.strokeStyle = '#f8fafc';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(Math.round(bullet.x), Math.round(bullet.y));
-      ctx.lineTo(Math.round(bullet.x - Math.cos(direction) * 3), Math.round(bullet.y - Math.sin(direction) * 3));
-      ctx.stroke();
-    });
-
-    ctx.fillStyle = '#d45b68';
-    enemyBullets.forEach((bullet) => {
-      const direction = Math.atan2(bullet.vy, bullet.vx);
-      ctx.strokeStyle = '#d45b68';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(Math.round(bullet.x), Math.round(bullet.y));
-      ctx.lineTo(Math.round(bullet.x - Math.cos(direction) * 3), Math.round(bullet.y - Math.sin(direction) * 3));
-      ctx.stroke();
-    });
+    bullets.forEach((bullet) => this.drawProjectile(ctx, bullet, '#f8fafc'));
+    enemyBullets.forEach((bullet) => this.drawProjectile(ctx, bullet, '#d45b68'));
 
     if (player.alive && player.grounded) {
       ctx.fillStyle = '#05070a';
@@ -118,9 +100,9 @@ export class Renderer {
     });
 
     particles.forEach((particle) => {
-      ctx.fillStyle = '#cbd5e1';
       const alpha = Math.max(0, Math.min(1, particle.life / particle.maxLife));
       ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#cbd5e1';
       ctx.fillRect(Math.round(particle.x), Math.round(particle.y), particle.size, particle.size);
     });
     ctx.globalAlpha = 1;
@@ -141,11 +123,27 @@ export class Renderer {
     }
   }
 
+  drawProjectile(ctx, bullet, color) {
+    const direction = Math.atan2(bullet.directionY, bullet.directionX);
+    const cos = Math.cos(direction);
+    const sin = Math.sin(direction);
+    const trailLength = 6;
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(Math.round(bullet.x), Math.round(bullet.y));
+    ctx.lineTo(Math.round(bullet.x - cos * trailLength), Math.round(bullet.y - sin * trailLength));
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(Math.round(bullet.x - 1), Math.round(bullet.y - 1), 4, 3);
+  }
+
   drawPlayer(ctx, player, animations) {
     const { state, frame } = animations?.getPlayerFrame(player) ?? { state: 'idle', frame: 0 };
     const x = Math.round(player.x);
     const y = Math.round(player.y);
-    const bob = state === 'idle' ? (frame === 1 ? -1 : 0) : 0;
 
     ctx.fillStyle = '#e6edf3';
     if (state === 'dodge') {
@@ -153,9 +151,9 @@ export class Renderer {
       ctx.fillStyle = '#8b98a8';
       ctx.fillRect(x + 2, y + 5, 3, 3);
     } else {
-      ctx.fillRect(x, y + bob, player.width, player.height);
+      ctx.fillRect(x, y, player.width, player.height);
       ctx.fillStyle = '#8b98a8';
-      ctx.fillRect(x + 3, y + 4 + bob, 2, 5);
+      ctx.fillRect(x + 3, y + 4, 2, 5);
       if (state === 'run' && frame % 2 === 1) {
         ctx.fillStyle = '#94a3b8';
         ctx.fillRect(x - 1, y + 10, 3, 2);
