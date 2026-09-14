@@ -9,6 +9,7 @@ import { Projectile } from './entities/Projectile.js';
 import { Weapon } from './entities/Weapon.js';
 import { Level } from './world/Level.js';
 import { ParticleSystem } from './systems/ParticleSystem.js';
+import { AnimationSystem } from './systems/AnimationSystem.js';
 
 export class Game {
   constructor(canvas) {
@@ -19,6 +20,7 @@ export class Game {
     this.input = new Input();
     this.weapon = new Weapon();
     this.particles = new ParticleSystem();
+    this.animations = new AnimationSystem();
     this.enemies = [];
     this.bullets = [];
     this.enemyBullets = [];
@@ -43,6 +45,7 @@ export class Game {
     this.enemyBullets = [];
     this.effects = [];
     this.particles.clear();
+    this.animations.time = 0;
     this.gameOver = false;
   }
 
@@ -78,6 +81,7 @@ export class Game {
   update(delta) {
     if (this.paused) return;
     this.time += delta;
+    this.animations.update(delta);
 
     if (this.gameOver) {
       this.particles.update(delta);
@@ -173,7 +177,7 @@ export class Game {
   }
 
   render() {
-    this.renderer.render(this.player, this.bullets, this.enemies, this.effects, this.score, this.camera, this.level, this.enemyBullets, this.gameOver, this.particles.particles);
+    this.renderer.render(this.player, this.bullets, this.enemies, this.effects, this.score, this.camera, this.level, this.enemyBullets, this.gameOver, this.particles.particles, this.animations);
   }
 
   destroy() {
