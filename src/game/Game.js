@@ -44,6 +44,7 @@ export class Game {
   }
 
   getInput() { return this.input; }
+  isGameOver() { return this.gameOver; }
 
   start() {
     this.render();
@@ -64,8 +65,10 @@ export class Game {
     this.weapon.reset?.();
     this.time = 0;
     this.score = 0;
+    this.paused = false;
     this.input.setMove(0, 0);
     this.input.endFire();
+    this.input.consumeAction('restart');
     this.render();
   }
 
