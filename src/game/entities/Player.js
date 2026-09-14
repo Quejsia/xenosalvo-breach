@@ -7,6 +7,8 @@ const DODGE_SPEED = 190;
 const DODGE_TIME = 0.18;
 const MAX_HEALTH = 5;
 const INVINCIBILITY_TIME = 0.8;
+const HURT_TIME = 0.14;
+const KNOCKBACK_DECAY = 520;
 
 export class Player {
   constructor(x, y, worldWidth = 960) {
@@ -25,6 +27,9 @@ export class Player {
     this.fireCooldown = 0;
     this.fireFlashTimer = 0;
     this.velocityY = 0;
+    this.knockbackX = 0;
+    this.knockbackY = 0;
+    this.hurtTimer = 0;
     this.grounded = false;
     this.maxHealth = MAX_HEALTH;
     this.health = MAX_HEALTH;
@@ -49,10 +54,11 @@ export class Player {
     this.fireCooldown = Math.max(0, this.fireCooldown - delta);
     this.fireFlashTimer = Math.max(0, this.fireFlashTimer - delta);
     this.invincibilityTimer = Math.max(0, this.invincibilityTimer - delta);
+    this.hurtTimer = Math.max(0, this.hurtTimer - delta);
 
     const wasGrounded = isGrounded(this, tileMap);
     const jumpPressed = input.consumeAction('jump');
-    if (wasGrounded && jumpPressed) {
+    if (wasGrounded && jumpPressed && this.hurtTimer <= 0) {
       this.velocityY = -JUMP_SPEED;
       this.grounded = false;
     }
@@ -60,26 +66,41 @@ export class Player {
     if (!wasGrounded || this.velocityY < 0) this.velocityY += GRAVITY * delta;
     else this.velocityY = 0;
 
-    const horizontalSpeed = this.dodgeTimer > 0 ? this.dodgeX * DODGE_SPEED : moveX * SPEED;
+    this.knockbackX = approachZero(this.knockbackX, KNOCKBACK_DECAY * delta);
+    this.knockbackY = approachZero(this.knockbackY, KNOCKBACK_DECAY * delta);
+    if (Math.abs(this.knockbackY) > 0.01) this.velocityY = this.knockbackY;
+
+    const controlLocked = this.hurtTimer > 0;
+    const horizontalSpeed = this.dodgeTimer > 0
+      ? this.dodgeX * DODGE_SPEED
+      : (controlLocked ? 0 : moveX * SPEED) + this.knockbackX;
     const result = moveAndCollide(this, horizontalSpeed * delta, this.velocityY * delta, tileMap);
-    if (result.hitY) this.velocityY = 0;
+    if (result.hitX) this.knockbackX = 0;
+    if (result.hitY) {
+      this.velocityY = 0;
+      this.knockbackY = 0;
+    }
     this.grounded = result.grounded || isGrounded(this, tileMap);
     if (this.grounded && this.velocityY > 0) this.velocityY = 0;
     if (this.dodgeTimer > 0) this.dodgeTimer = Math.max(0, this.dodgeTimer - delta);
   }
 
   dodge(input) {
-    if (!this.alive || this.dodgeTimer > 0) return false;
+    if (!this.alive || this.dodgeTimer > 0 || this.hurtTimer > 0) return false;
     const moveX = input.getMove().x;
     this.dodgeX = Math.abs(moveX) >= 0.2 ? Math.sign(moveX) : Math.sign(this.aimX) || 1;
     this.dodgeTimer = DODGE_TIME;
     return true;
   }
 
-  damage(amount = 1) {
+  damage(amount = 1, knockbackX = 0, knockbackY = 0) {
     if (!this.alive || this.invincibilityTimer > 0 || this.dodgeTimer > 0) return false;
     this.health = Math.max(0, this.health - amount);
     this.invincibilityTimer = INVINCIBILITY_TIME;
+    this.hurtTimer = HURT_TIME;
+    this.knockbackX = knockbackX;
+    this.knockbackY = knockbackY;
+    this.velocityY = knockbackY;
     if (this.health <= 0) this.alive = false;
     return true;
   }
@@ -89,6 +110,9 @@ export class Player {
     this.y = this.spawnY;
     this.moveX = 0;
     this.velocityY = 0;
+    this.knockbackX = 0;
+    this.knockbackY = 0;
+    this.hurtTimer = 0;
     this.dodgeTimer = 0;
     this.fireFlashTimer = 0;
     this.health = this.maxHealth;
@@ -96,10 +120,16 @@ export class Player {
     this.alive = true;
   }
 
-  canFire() { return this.alive && this.fireCooldown <= 0; }
+  canFire() { return this.alive && this.hurtTimer <= 0 && this.fireCooldown <= 0; }
 
   fired(cooldown = 0.12) {
     this.fireCooldown = cooldown;
     this.fireFlashTimer = 0.07;
   }
+}
+
+function approachZero(value, amount) {
+  if (value > 0) return Math.max(0, value - amount);
+  if (value < 0) return Math.min(0, value + amount);
+  return 0;
 }
