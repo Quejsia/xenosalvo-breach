@@ -36,10 +36,10 @@ export class Game {
   createActors() {
     this.player = new Player(this.level.spawn.x, this.level.spawn.y, this.level.width);
     this.enemies = [
-      new Enemy(230, 116, 1),
-      new Enemy(420, 116, 2),
-      new Enemy(650, 116, 3),
-      new Enemy(820, 116, 4),
+      new Enemy(230, 116, 1, this.level.width),
+      new Enemy(420, 116, 2, this.level.width),
+      new Enemy(650, 116, 3, this.level.width),
+      new Enemy(820, 116, 4, this.level.width),
     ];
     this.bullets = [];
     this.enemyBullets = [];
@@ -110,17 +110,15 @@ export class Game {
         const aim = this.input.getAim();
         this.effects.push({ type: 'muzzle', x: projectile.x, y: projectile.y, dx: aim.x, dy: aim.y, life: 0.07, maxLife: 0.07 });
         this.particles.burst(projectile.x, projectile.y, { count: 3, speed: 22, life: 0.1, size: 1, spread: 0.7, angle: Math.atan2(-aim.y, -aim.x) });
-        // Do not shake the whole camera for every automatic-fire shot.
-        // Impacts, dodges and abilities provide the stronger screen feedback.
       }
     }
 
     this.enemies.forEach((enemy) => {
-      enemy.update(delta, this.player);
+      enemy.update(delta, this.player, this.level.tileMap);
       const shot = enemy.attack(this.player);
       if (shot) {
         this.enemyBullets.push(new Projectile(shot));
-        this.effects.push({ type: 'enemy-fire', x: shot.x, y: shot.y, life: 0.1, maxLife: 0.1 });
+        this.effects.push({ type: 'enemy-fire', x: shot.x, y: shot.y, dx: shot.directionX, dy: shot.directionY, life: 0.1, maxLife: 0.1 });
         this.particles.burst(shot.x, shot.y, { count: 3, speed: 18, life: 0.12, spread: 0.9, angle: Math.atan2(shot.directionY, shot.directionX) });
       }
     });
