@@ -1,4 +1,4 @@
-import { overlaps } from '../Collision.js';
+import { overlapsEntityHurtbox } from '../combat/Hitbox.js';
 
 export class Projectile {
   constructor({ x, y, directionX, directionY, speed = 240, damage = 1, life = 1.2, enemyShot = false }) {
@@ -13,13 +13,12 @@ export class Projectile {
     this.life = life;
     this.enemyShot = enemyShot;
     this.alive = true;
+    this.hitApplied = false;
   }
 
-  update(delta, level, enemies = [], player = null) {
+  update(delta, level) {
     if (!this.alive) return { hit: null };
 
-    // Use a swept movement in small steps so fast bullets cannot visually or
-    // physically skip through thin targets/terrain between frames.
     const distance = this.speed * delta;
     const steps = Math.max(1, Math.ceil(distance / 4));
     const stepX = this.directionX * (distance / steps);
@@ -33,24 +32,14 @@ export class Projectile {
         this.alive = false;
         return { hit: null, terrain: true };
       }
-
-      if (this.enemyShot) {
-        if (player?.alive && overlaps(this, player)) {
-          this.alive = false;
-          return { playerHit: player, damage: this.damage };
-        }
-      } else {
-        for (const enemy of enemies) {
-          if (enemy.alive && overlaps(this, enemy)) {
-            this.alive = false;
-            return { hit: enemy, defeated: enemy.hit(this.damage) };
-          }
-        }
-      }
     }
 
     this.life -= delta;
     if (this.life <= 0) this.alive = false;
     return { hit: null };
+  }
+
+  canHit(target) {
+    return this.alive && !this.hitApplied && target?.alive && overlapsEntityHurtbox(this, target);
   }
 }
