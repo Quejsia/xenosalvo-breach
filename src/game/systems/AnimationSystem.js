@@ -18,18 +18,18 @@ const ENEMY_STATES = Object.freeze({
   DEAD: 'dead',
 });
 
-// Test atlas layout: 18 sequential 32x32 frames, extracted from the user's
-// supplied Player archive. Keep this mapping separate so the final art pack
-// can replace the test atlas without changing gameplay state names.
+// Supplied player test atlas: 5 columns x 9 rows of 32x32 runtime frames.
+// Rows 0-4 contain 24 run frames; rows 5-8 contain 17 jump/fall frames.
 const PLAYER_ANIMATIONS = Object.freeze({
-  idle: { fps: 4, frames: 2, loop: true, start: 0 },
-  run: { fps: 10, frames: 4, loop: true, start: 2 },
-  jump: { fps: 6, frames: 2, loop: false, start: 6 },
-  fall: { fps: 6, frames: 2, loop: false, start: 8 },
-  fire: { fps: 14, frames: 2, loop: false, start: 10 },
-  dodge: { fps: 12, frames: 3, loop: false, start: 12 },
-  hurt: { fps: 10, frames: 2, loop: false, start: 15 },
-  dead: { fps: 8, frames: 3, loop: false, start: 17 },
+  idle: { fps: 4, frames: 4, loop: true, start: 0 },
+  run: { fps: 12, frames: 24, loop: true, start: 0 },
+  jump: { fps: 7, frames: 8, loop: false, start: 25 },
+  fall: { fps: 7, frames: 9, loop: false, start: 33 },
+  // Dedicated source art for these states is not in the supplied test subset.
+  fire: { fps: 18, frames: 4, loop: false, start: 4 },
+  dodge: { fps: 16, frames: 4, loop: false, start: 20 },
+  hurt: { fps: 10, frames: 4, loop: false, start: 25 },
+  dead: { fps: 5, frames: 4, loop: false, start: 38 },
 });
 
 const ENEMY_ANIMATIONS = Object.freeze({
