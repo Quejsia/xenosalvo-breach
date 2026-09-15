@@ -18,15 +18,18 @@ const ENEMY_STATES = Object.freeze({
   DEAD: 'dead',
 });
 
+// Test atlas layout: 18 sequential 32x32 frames, extracted from the user's
+// supplied Player archive. Keep this mapping separate so the final art pack
+// can replace the test atlas without changing gameplay state names.
 const PLAYER_ANIMATIONS = Object.freeze({
-  idle: { fps: 4, frames: 4, loop: true, row: 0 },
-  run: { fps: 12, frames: 4, loop: true, row: 1 },
-  jump: { fps: 7, frames: 4, loop: false, row: 2 },
-  fall: { fps: 7, frames: 4, loop: false, row: 3 },
-  fire: { fps: 18, frames: 4, loop: false, row: 4 },
-  dodge: { fps: 16, frames: 4, loop: false, row: 5 },
-  hurt: { fps: 10, frames: 4, loop: false, row: 6 },
-  dead: { fps: 5, frames: 4, loop: false, row: 7 },
+  idle: { fps: 4, frames: 2, loop: true, start: 0 },
+  run: { fps: 10, frames: 4, loop: true, start: 2 },
+  jump: { fps: 6, frames: 2, loop: false, start: 6 },
+  fall: { fps: 6, frames: 2, loop: false, start: 8 },
+  fire: { fps: 14, frames: 2, loop: false, start: 10 },
+  dodge: { fps: 12, frames: 3, loop: false, start: 12 },
+  hurt: { fps: 10, frames: 2, loop: false, start: 15 },
+  dead: { fps: 8, frames: 3, loop: false, start: 17 },
 });
 
 const ENEMY_ANIMATIONS = Object.freeze({
@@ -44,9 +47,7 @@ export class AnimationSystem {
     this.states = new WeakMap();
   }
 
-  update(delta) {
-    this.time += delta;
-  }
+  update(delta) { this.time += delta; }
 
   setState(entity, state) {
     const previous = this.states.get(entity);
@@ -85,16 +86,17 @@ export class AnimationSystem {
 
   getAnimation(entity, state, definitions) {
     const settings = definitions[state] ?? definitions.idle;
-    this.setState(entity, state);
+    const transition = this.setState(entity, state);
     const frame = this.getFrame(entity, settings.fps, settings.frames, settings.loop);
     return {
       state,
       frame,
-      row: settings.row,
+      sheetFrame: settings.start != null ? settings.start + frame : frame,
+      row: settings.row ?? 0,
       fps: settings.fps,
       frames: settings.frames,
       loop: settings.loop,
-      elapsed: this.time - (this.states.get(entity)?.startedAt ?? this.time),
+      elapsed: this.time - transition.startedAt,
     };
   }
 
