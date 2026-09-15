@@ -36,16 +36,25 @@ export class Renderer {
 
     enemies.forEach((enemy) => {
       if (!enemy.alive) return;
+      const animation = animations?.getEnemyFrame(enemy) ?? { state: 'idle', frame: 0 };
+      const x = Math.round(enemy.x);
       const y = Math.round(enemy.y);
-      ctx.fillStyle = enemy.hitTimer > 0 ? '#f8fafc' : '#d45b68';
-      ctx.fillRect(Math.round(enemy.x), y, enemy.width, enemy.height);
+      const bob = animation.state === 'run' ? (animation.frame % 2 === 1 ? 1 : 0) : 0;
+      const stretch = animation.state === 'stunned' ? 1 : animation.state === 'attack' && animation.frame === 1 ? 2 : 0;
+
+      ctx.fillStyle = animation.state === 'hurt' ? '#f8fafc' : animation.state === 'stunned' ? '#9fb3c8' : '#d45b68';
+      ctx.fillRect(x, y + bob, enemy.width + stretch, enemy.height);
       ctx.fillStyle = '#24151a';
-      ctx.fillRect(Math.round(enemy.x + 2), y + 4, 2, 2);
-      ctx.fillRect(Math.round(enemy.x + 6), y + 4, 2, 2);
+      ctx.fillRect(x + 2, y + bob + 4, 2, 2);
+      ctx.fillRect(x + 6 + stretch, y + bob + 4, 2, 2);
+      if (animation.state === 'attack') {
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(x + enemy.width - 1 + stretch, y + 7, 3, 1);
+      }
       ctx.fillStyle = '#05070a';
-      ctx.fillRect(Math.round(enemy.x), y - 4, enemy.width, 2);
+      ctx.fillRect(x, y - 4, enemy.width + stretch, 2);
       ctx.fillStyle = '#e6edf3';
-      ctx.fillRect(Math.round(enemy.x), y - 4, enemy.width * Math.max(0, enemy.health / enemy.maxHealth), 2);
+      ctx.fillRect(x, y - 4, (enemy.width + stretch) * Math.max(0, enemy.health / enemy.maxHealth), 2);
     });
 
     bullets.forEach((bullet) => this.drawProjectile(ctx, bullet, '#f8fafc'));
@@ -150,6 +159,11 @@ export class Renderer {
       ctx.fillRect(x - 3, y + 2, 13, 8);
       ctx.fillStyle = '#8b98a8';
       ctx.fillRect(x + 2, y + 5, 3, 3);
+    } else if (state === 'hurt') {
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(x - 1, y + 1, player.width + 2, player.height - 2);
+      ctx.fillStyle = '#8b98a8';
+      ctx.fillRect(x + 2, y + 4, 2, 5);
     } else {
       ctx.fillRect(x, y, player.width, player.height);
       ctx.fillStyle = '#8b98a8';
@@ -158,6 +172,10 @@ export class Renderer {
         ctx.fillStyle = '#94a3b8';
         ctx.fillRect(x - 1, y + 10, 3, 2);
         ctx.fillRect(x + 6, y + 9, 3, 2);
+      }
+      if (state === 'fire') {
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(x + player.width, y + 5, 2 + frame, 2);
       }
     }
 
