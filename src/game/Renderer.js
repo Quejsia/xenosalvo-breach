@@ -1,3 +1,5 @@
+import { loadPlayerTestAtlas } from './assets/playerTestAtlas.js';
+
 const VIEW_WIDTH = 320;
 const VIEW_HEIGHT = 180;
 const SPRITE_SIZE = 32;
@@ -7,9 +9,9 @@ export class Renderer {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.ctx.imageSmoothingEnabled = false;
+    this.playerSprite = null;
+    loadPlayerTestAtlas().then((image) => { this.playerSprite = image; }).catch(() => {});
 
-    this.playerSprite = new Image();
-    this.playerSprite.src = '/assets/sprites/player.svg';
     this.enemySprite = new Image();
     this.enemySprite.src = '/assets/sprites/enemy-soldier.svg';
   }
@@ -66,7 +68,7 @@ export class Renderer {
       ctx.fillRect(Math.round(player.x - 1), Math.round(player.y + player.height), player.width + 2, 2);
     }
 
-    const playerAnimation = animations?.getPlayerFrame(player) ?? { state: player.alive ? 'idle' : 'dead', frame: 0, row: 0 };
+    const playerAnimation = animations?.getPlayerFrame(player) ?? { state: player.alive ? 'idle' : 'dead', frame: 0, sheetFrame: 0 };
     const blinking = player.invincibilityTimer > 0 && Math.floor(player.invincibilityTimer * 18) % 2 === 0;
     if (!blinking || !player.alive) this.drawPlayer(ctx, player, playerAnimation);
 
@@ -138,27 +140,10 @@ export class Renderer {
     return true;
   }
 
-  drawProjectile(ctx, bullet, color) {
-    const direction = Math.atan2(bullet.directionY, bullet.directionX);
-    const cos = Math.cos(direction);
-    const sin = Math.sin(direction);
-    const trailLength = 6;
-
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(Math.round(bullet.x), Math.round(bullet.y));
-    ctx.lineTo(Math.round(bullet.x - cos * trailLength), Math.round(bullet.y - sin * trailLength));
-    ctx.stroke();
-
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(Math.round(bullet.x - 1), Math.round(bullet.y - 1), 4, 3);
-  }
-
   drawPlayer(ctx, player, animation) {
-    const x = Math.round(player.x) - 6;
+    const x = Math.round(player.x) - 12;
     const y = Math.round(player.y + player.height - SPRITE_SIZE);
-    const drawn = this.drawSprite(ctx, this.playerSprite, animation.frame, animation.row, x, y);
+    const drawn = this.playerSprite && this.drawSheetFrame(ctx, this.playerSprite, animation.sheetFrame, x, y);
     if (!drawn) this.drawPlayerFallback(ctx, player, animation);
 
     const centerX = player.x + player.width / 2;
@@ -170,6 +155,12 @@ export class Renderer {
     ctx.moveTo(centerX, centerY);
     ctx.lineTo(centerX + player.aimX * (9 + recoil), centerY + player.aimY * (9 + recoil));
     ctx.stroke();
+  }
+
+  drawSheetFrame(ctx, image, frame, x, y) {
+    if (!image?.complete || image.naturalWidth <= 0) return false;
+    ctx.drawImage(image, frame * SPRITE_SIZE, 0, SPRITE_SIZE, SPRITE_SIZE, x, y, SPRITE_SIZE, SPRITE_SIZE);
+    return true;
   }
 
   drawPlayerFallback(ctx, player, animation) {
@@ -185,5 +176,22 @@ export class Renderer {
     const y = Math.round(enemy.y);
     ctx.fillStyle = animation.state === 'hurt' ? '#f8fafc' : '#d45b68';
     ctx.fillRect(x, y, enemy.width, enemy.height);
+  }
+
+  drawProjectile(ctx, bullet, color) {
+    const direction = Math.atan2(bullet.directionY, bullet.directionX);
+    const cos = Math.cos(direction);
+    const sin = Math.sin(direction);
+    const trailLength = 6;
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(Math.round(bullet.x), Math.round(bullet.y));
+    ctx.lineTo(Math.round(bullet.x - cos * trailLength), Math.round(bullet.y - sin * trailLength));
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(Math.round(bullet.x - 1), Math.round(bullet.y - 1), 4, 3);
   }
 }
