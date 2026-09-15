@@ -1,11 +1,17 @@
 const VIEW_WIDTH = 320;
 const VIEW_HEIGHT = 180;
+const SPRITE_SIZE = 32;
 
 export class Renderer {
   constructor(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.ctx.imageSmoothingEnabled = false;
+
+    this.playerSprite = new Image();
+    this.playerSprite.src = '/assets/sprites/player.svg';
+    this.enemySprite = new Image();
+    this.enemySprite.src = '/assets/sprites/enemy-soldier.svg';
   }
 
   render(player, bullets = [], enemies = [], effects = [], score = 0, camera = null, level = null, enemyBullets = [], gameOver = false, particles = [], animations = null) {
@@ -35,26 +41,21 @@ export class Renderer {
     }
 
     enemies.forEach((enemy) => {
-      if (!enemy.alive) return;
-      const animation = animations?.getEnemyFrame(enemy) ?? { state: 'idle', frame: 0 };
-      const x = Math.round(enemy.x);
-      const y = Math.round(enemy.y);
-      const bob = animation.state === 'run' ? (animation.frame % 2 === 1 ? 1 : 0) : 0;
-      const stretch = animation.state === 'stunned' ? 1 : animation.state === 'attack' && animation.frame === 1 ? 2 : 0;
+      const animation = animations?.getEnemyFrame(enemy) ?? { state: 'idle', frame: 0, row: 0 };
+      if (animation.state !== 'dead' && !enemy.alive) return;
+      const x = Math.round(enemy.x) - 11;
+      const y = Math.round(enemy.y + enemy.height - SPRITE_SIZE);
+      const drawn = this.drawSprite(ctx, this.enemySprite, animation.frame, animation.row, x, y);
+      if (!drawn) this.drawEnemyFallback(ctx, enemy, animation);
 
-      ctx.fillStyle = animation.state === 'hurt' ? '#f8fafc' : animation.state === 'stunned' ? '#9fb3c8' : '#d45b68';
-      ctx.fillRect(x, y + bob, enemy.width + stretch, enemy.height);
-      ctx.fillStyle = '#24151a';
-      ctx.fillRect(x + 2, y + bob + 4, 2, 2);
-      ctx.fillRect(x + 6 + stretch, y + bob + 4, 2, 2);
-      if (animation.state === 'attack') {
-        ctx.fillStyle = '#f8fafc';
-        ctx.fillRect(x + enemy.width - 1 + stretch, y + 7, 3, 1);
+      if (enemy.alive) {
+        const barX = Math.round(enemy.x);
+        const barY = Math.round(enemy.y - 4);
+        ctx.fillStyle = '#05070a';
+        ctx.fillRect(barX, barY, enemy.width, 2);
+        ctx.fillStyle = '#e6edf3';
+        ctx.fillRect(barX, barY, enemy.width * Math.max(0, enemy.health / enemy.maxHealth), 2);
       }
-      ctx.fillStyle = '#05070a';
-      ctx.fillRect(x, y - 4, enemy.width + stretch, 2);
-      ctx.fillStyle = '#e6edf3';
-      ctx.fillRect(x, y - 4, (enemy.width + stretch) * Math.max(0, enemy.health / enemy.maxHealth), 2);
     });
 
     bullets.forEach((bullet) => this.drawProjectile(ctx, bullet, '#f8fafc'));
@@ -65,10 +66,9 @@ export class Renderer {
       ctx.fillRect(Math.round(player.x - 1), Math.round(player.y + player.height), player.width + 2, 2);
     }
 
-    if (player.alive) {
-      const blinking = player.invincibilityTimer > 0 && Math.floor(player.invincibilityTimer * 18) % 2 === 0;
-      if (!blinking) this.drawPlayer(ctx, player, animations);
-    }
+    const playerAnimation = animations?.getPlayerFrame(player) ?? { state: player.alive ? 'idle' : 'dead', frame: 0, row: 0 };
+    const blinking = player.invincibilityTimer > 0 && Math.floor(player.invincibilityTimer * 18) % 2 === 0;
+    if (!blinking || !player.alive) this.drawPlayer(ctx, player, playerAnimation);
 
     effects.forEach((effect) => {
       const progress = effect.life / effect.maxLife;
@@ -132,6 +132,12 @@ export class Renderer {
     }
   }
 
+  drawSprite(ctx, image, frame, row, x, y) {
+    if (!image?.complete || image.naturalWidth <= 0) return false;
+    ctx.drawImage(image, frame * SPRITE_SIZE, row * SPRITE_SIZE, SPRITE_SIZE, SPRITE_SIZE, x, y, SPRITE_SIZE, SPRITE_SIZE);
+    return true;
+  }
+
   drawProjectile(ctx, bullet, color) {
     const direction = Math.atan2(bullet.directionY, bullet.directionX);
     const cos = Math.cos(direction);
@@ -149,35 +155,11 @@ export class Renderer {
     ctx.fillRect(Math.round(bullet.x - 1), Math.round(bullet.y - 1), 4, 3);
   }
 
-  drawPlayer(ctx, player, animations) {
-    const { state, frame } = animations?.getPlayerFrame(player) ?? { state: 'idle', frame: 0 };
-    const x = Math.round(player.x);
-    const y = Math.round(player.y);
-
-    ctx.fillStyle = '#e6edf3';
-    if (state === 'dodge') {
-      ctx.fillRect(x - 3, y + 2, 13, 8);
-      ctx.fillStyle = '#8b98a8';
-      ctx.fillRect(x + 2, y + 5, 3, 3);
-    } else if (state === 'hurt') {
-      ctx.fillStyle = '#f8fafc';
-      ctx.fillRect(x - 1, y + 1, player.width + 2, player.height - 2);
-      ctx.fillStyle = '#8b98a8';
-      ctx.fillRect(x + 2, y + 4, 2, 5);
-    } else {
-      ctx.fillRect(x, y, player.width, player.height);
-      ctx.fillStyle = '#8b98a8';
-      ctx.fillRect(x + 3, y + 4, 2, 5);
-      if (state === 'run' && frame % 2 === 1) {
-        ctx.fillStyle = '#94a3b8';
-        ctx.fillRect(x - 1, y + 10, 3, 2);
-        ctx.fillRect(x + 6, y + 9, 3, 2);
-      }
-      if (state === 'fire') {
-        ctx.fillStyle = '#f8fafc';
-        ctx.fillRect(x + player.width, y + 5, 2 + frame, 2);
-      }
-    }
+  drawPlayer(ctx, player, animation) {
+    const x = Math.round(player.x) - 6;
+    const y = Math.round(player.y + player.height - SPRITE_SIZE);
+    const drawn = this.drawSprite(ctx, this.playerSprite, animation.frame, animation.row, x, y);
+    if (!drawn) this.drawPlayerFallback(ctx, player, animation);
 
     const centerX = player.x + player.width / 2;
     const centerY = player.y + player.height / 2;
@@ -188,5 +170,20 @@ export class Renderer {
     ctx.moveTo(centerX, centerY);
     ctx.lineTo(centerX + player.aimX * (9 + recoil), centerY + player.aimY * (9 + recoil));
     ctx.stroke();
+  }
+
+  drawPlayerFallback(ctx, player, animation) {
+    const x = Math.round(player.x);
+    const y = Math.round(player.y);
+    ctx.fillStyle = animation.state === 'hurt' ? '#f8fafc' : '#e6edf3';
+    ctx.fillRect(x, y, player.width, player.height);
+    if (animation.state === 'dodge') ctx.fillRect(x - 3, y + 2, 13, 8);
+  }
+
+  drawEnemyFallback(ctx, enemy, animation) {
+    const x = Math.round(enemy.x);
+    const y = Math.round(enemy.y);
+    ctx.fillStyle = animation.state === 'hurt' ? '#f8fafc' : '#d45b68';
+    ctx.fillRect(x, y, enemy.width, enemy.height);
   }
 }
