@@ -19,23 +19,23 @@ const ENEMY_STATES = Object.freeze({
 });
 
 const PLAYER_ANIMATIONS = Object.freeze({
-  idle: { fps: 4, frames: 2, loop: true },
-  run: { fps: 12, frames: 4, loop: true },
-  jump: { fps: 5, frames: 2, loop: false },
-  fall: { fps: 5, frames: 2, loop: false },
-  dodge: { fps: 16, frames: 3, loop: false },
-  fire: { fps: 18, frames: 2, loop: false },
-  hurt: { fps: 10, frames: 2, loop: false },
-  dead: { fps: 5, frames: 2, loop: false },
+  idle: { fps: 4, frames: 4, loop: true, row: 0 },
+  run: { fps: 12, frames: 4, loop: true, row: 1 },
+  jump: { fps: 7, frames: 4, loop: false, row: 2 },
+  fall: { fps: 7, frames: 4, loop: false, row: 3 },
+  fire: { fps: 18, frames: 4, loop: false, row: 4 },
+  dodge: { fps: 16, frames: 4, loop: false, row: 5 },
+  hurt: { fps: 10, frames: 4, loop: false, row: 6 },
+  dead: { fps: 5, frames: 4, loop: false, row: 7 },
 });
 
 const ENEMY_ANIMATIONS = Object.freeze({
-  idle: { fps: 4, frames: 2, loop: true },
-  run: { fps: 10, frames: 4, loop: true },
-  attack: { fps: 8, frames: 2, loop: false },
-  hurt: { fps: 10, frames: 2, loop: false },
-  stunned: { fps: 6, frames: 2, loop: true },
-  dead: { fps: 5, frames: 2, loop: false },
+  idle: { fps: 4, frames: 4, loop: true, row: 0 },
+  run: { fps: 10, frames: 4, loop: true, row: 1 },
+  attack: { fps: 8, frames: 4, loop: false, row: 2 },
+  hurt: { fps: 10, frames: 4, loop: false, row: 3 },
+  stunned: { fps: 6, frames: 4, loop: true, row: 4 },
+  dead: { fps: 5, frames: 4, loop: false, row: 5 },
 });
 
 export class AnimationSystem {
@@ -48,18 +48,20 @@ export class AnimationSystem {
     this.time += delta;
   }
 
-  getFrame(entity, fps = 10, frameCount = 2, loop = true) {
-    const safeCount = Math.max(1, frameCount);
-    if (!loop) return Math.min(safeCount - 1, Math.floor(this.time * fps));
-    return Math.floor(this.time * fps) % safeCount;
-  }
-
   setState(entity, state) {
     const previous = this.states.get(entity);
     if (previous?.state === state) return previous;
     const next = { state, startedAt: this.time };
     this.states.set(entity, next);
     return next;
+  }
+
+  getFrame(entity, fps = 10, frameCount = 2, loop = true) {
+    const safeCount = Math.max(1, frameCount);
+    const state = this.states.get(entity);
+    const elapsed = Math.max(0, this.time - (state?.startedAt ?? this.time));
+    if (!loop) return Math.min(safeCount - 1, Math.floor(elapsed * fps));
+    return Math.floor(elapsed * fps) % safeCount;
   }
 
   getPlayerState(player) {
@@ -77,18 +79,18 @@ export class AnimationSystem {
     if (enemy.stunTimer > 0 || enemy.state === 'stunned') return ENEMY_STATES.STUNNED;
     if (enemy.hitTimer > 0 || enemy.state === 'hurt') return ENEMY_STATES.HURT;
     if (enemy.state === 'attack') return ENEMY_STATES.ATTACK;
-    if (enemy.state === 'chase' || enemy.state === 'retreat' || enemy.state === 'patrol') {
-      return ENEMY_STATES.RUN;
-    }
+    if (enemy.state === 'chase' || enemy.state === 'retreat' || enemy.state === 'patrol') return ENEMY_STATES.RUN;
     return ENEMY_STATES.IDLE;
   }
 
   getAnimation(entity, state, definitions) {
     const settings = definitions[state] ?? definitions.idle;
     this.setState(entity, state);
+    const frame = this.getFrame(entity, settings.fps, settings.frames, settings.loop);
     return {
       state,
-      frame: this.getFrame(entity, settings.fps, settings.frames, settings.loop),
+      frame,
+      row: settings.row,
       fps: settings.fps,
       frames: settings.frames,
       loop: settings.loop,
@@ -97,13 +99,11 @@ export class AnimationSystem {
   }
 
   getPlayerFrame(player) {
-    const state = this.getPlayerState(player);
-    return this.getAnimation(player, state, PLAYER_ANIMATIONS);
+    return this.getAnimation(player, this.getPlayerState(player), PLAYER_ANIMATIONS);
   }
 
   getEnemyFrame(enemy) {
-    const state = this.getEnemyState(enemy);
-    return this.getAnimation(enemy, state, ENEMY_ANIMATIONS);
+    return this.getAnimation(enemy, this.getEnemyState(enemy), ENEMY_ANIMATIONS);
   }
 }
 
